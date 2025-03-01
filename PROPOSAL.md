@@ -131,3 +131,11 @@ Testing
 Ensure smooth deployment
 Analytics
 
+## Key Milestones
+1. March 14: Project infrastructure complete with authentication and Google Calendar API implemented
+2. March 28: Core calendar completed with basic AI integration
+3. April 4: AI capability of editing calendar autonomously, Sprint 1 completed
+4. April 11: Networking integration, groups implemented
+5. April 18: AI scheduling group events, Ollama/Gemini integration
+6. April 25: AI-powered analytics, suggestions, final deployment
+7. April 28: Final project submission and demonstration
