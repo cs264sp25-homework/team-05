@@ -4,24 +4,33 @@ We are building an AI-powered cursor-like extension for Google Calendar. The ext
 
 ## Functional Requirements
 
-### General Features
+### Primary Features (Must Have)
 
--Create an account and sign in (through Google)
--Sorting events/tasks based on priority
--Connect with a user's Google Calendar
--Display the user’s calendar
--CRUD Operations on Calendar Events and Tasks
--Display a chat panel to chat with the AI
+As a user, I want to:
+    1. Create an account and sign in using Google so that I can securely access my calendar and scheduling features
+    2. Connect my Google Calendar to the application so that I can synchronize my events and tasks seamlessly
+    3. See a visual display of my Google Calendar within the application so that I can manage my schedule efficiently
+    4. Create, update, delete, and retrieve calendar events and tasks so that I can manage my schedule flexibly
+    5. Have a chat panel where I can interact with an AI assistant to manage my schedule more efficiently
+
+### Secondary Features (Should Have)
+
+As a user, I want to:
+    1. Sort my events and tasks based on priority so that I can focus on the most important tasks first
 
 
-The following features could be implemented, if time permits:
-- Event/task templates
-- Event/task tags
-- Push notifications
+### Tertiary Features (Nice to Have)
 
-The following features would be nice to have but won't be implemented:
+As a user, I want to:
+    1. Create event and task templates so that I can quickly add commonly scheduled activities without re-entering details
+    2. Categorize events and tasks using tags so that I can filter and organize them easily
+    3. Receive push notifications for upcoming events and tasks so that I don’t miss important commitments
 
-- Integration with other calendars: Apple, Microsoft
+### Won't Have Features
+
+As a user, I want to:
+    1. Integrate calendars from Apple and Microsoft so that I can manage all my schedules in one place
+
 
 ### AI Features
 
