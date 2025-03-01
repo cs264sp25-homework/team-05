@@ -52,7 +52,7 @@ Backend: Convex
 APIs: Google Calendar API, OpenAI, Ollama(if time permits)
 
 ## Project Roadmap
-# Iteration 1: March 16th
+### Iteration 1: March 16th
 
 GENERAL FEATURES
 1. Create an account and sign in using Google so that I can securely access my calendar and scheduling features
@@ -63,7 +63,7 @@ GENERAL FEATURES
 6. Create event and task templates so that I can quickly add commonly scheduled activities without re-entering details
 7. Categorize events and tasks using tags so that I can filter and organize them easily
 
-# Iteration 2: April 5th
+### Iteration 2: April 5th
 
 AI FEATURES
 1. Have a chat panel where I can interact with the AI to manage my schedule more efficiently
@@ -75,7 +75,7 @@ AI FEATURES
 7. Have the AI to provide best practices for scheduling so that I can optimize my time management
 8. Have the AI suggest how to schedule my day or week so that I can manage my time effectively
 
-# Iteration 3: April 25th
+### Iteration 3: April 25th
 
 AI FEATURES
 1. Create groups of people who need to meet as a team, allowing the chatbot to access general availability of members while keeping private details secure
