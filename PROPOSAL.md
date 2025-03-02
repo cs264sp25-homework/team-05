@@ -1,6 +1,6 @@
 # Project Proposal
 
-We are building an AI-powered cursor-like extension for Google Calendar. The extension will allow users to schedule events and tasks, while also getting tips and advice on creating an optimized schedule from a chat feature.
+We are building an AI-powered cursor-like web application for Google Calendar. The app will allow users to schedule events and tasks for themselves along with a group of other users, while also getting tips and advice on creating an optimized schedule from a chat feature.
 
 ## Functional Requirements
 
@@ -47,89 +47,89 @@ As a user, I want to:
 
 ### Tech Stack
 
-Frontend: Vite, React.js, 
-Backend: Convex 
-APIs: Google Calendar API, OpenAI, Ollama(if time permits)
+- Frontend: Vite, React.js, 
+- Backend: Convex 
+- APIs: Google Calendar API, OpenAI, Ollama (if time permits)
 
 ## Roadmap
 ### SPRINT 1
 #### Week 8
-Set up project repository with React, Vite, TailwindCSS, and Shadcn UI
-Create project structure
-Implement user authentication system (Primary Feature #1)
-Integrate Google Sign-In
-Create sign-out functionality
-Setup Google Calendar API to fetch and display calendars
-View same events/tasks you would see in Google Calendar
-Design and implement database schema
-Design schema for events, groups/teams, message, chat and potentially more
-Develop UI component library
-Collect reusable components like buttons, dialogs, inputs, etc.
+1. Set up project repository with React, Vite, TailwindCSS, and Shadcn UI
+    - Create project structure
+2. Implement user authentication system (Primary Feature #1)
+    - Integrate Google Sign-In
+    - Create sign-out functionality
+3. Setup Google Calendar API to fetch and display calendars
+    - View same events/tasks you would see in Google Calendar
+4. Design and implement database schema
+    - Design schema for events, groups/teams, message, chat and potentially more
+5. Develop UI component library
+    - Collect reusable components like buttons, dialogs, inputs, etc.
 
 Deliverables:
-GitHub repository with CI/CD setup
-Database schema setup
-Being able to sign in using Google account
+- GitHub repository with CI/CD setup
+- Database schema setup
+- Being able to sign in using Google account
 
 
 #### Week 10
-CRUD Operations on Events/Tasks
-Build necessary components to test functionality
-Integrate with Convex functions
-Test in dashboard
-Set up UI and functionality for the AI chatbot  
-Develop UI to mimic existing chabots to increase usability
-Converse with an AI assistant through chat that can:
-Take in natural language such as “I am not a morning person, how can I schedule my afternoon for the following events…” and schedule accordingly
-Offer good scheduling practices to the user
-Allow the AI bot to create tasks and events based on the user’s prompt
-Integrate with Convex functions
+1. CRUD Operations on Events/Tasks
+    - Build necessary components to test functionality
+    - Integrate with Convex functions
+    - Test in dashboard
+2. Set up UI and functionality for the AI chatbot  
+    - Develop UI to mimic existing chabots to increase usability
+3. Converse with an AI assistant through chat that can:
+    - Take in natural language such as “I am not a morning person, how can I schedule my afternoon for the following events…” and schedule accordingly
+    - Offer good scheduling practices to the user
+4. Allow the AI bot to create tasks and events based on the user’s prompt
+    - Integrate with Convex functions
 
 Deliverables: 
-CRUD operations for events
-UI for chatbot
-Basic integration with AI
+- CRUD operations for events
+- UI for chatbot
+- Basic integration with AI
 
 #### Week 11
-Allow the AI bot to edit/delete events from the user’s calenda
-Resolve schedule conflicts using the ChatBot, if something new comes up it will move an event to another time, while slotting this new event in.
-Sprint 1 Wrap Up (testing, etc)
+1. Allow the AI bot to edit/delete events from the user’s calendar
+2. Resolve schedule conflicts using the ChatBot, if something new comes up it will move an event to another time, while slotting this new event in.
+3. Sprint 1 Wrap Up (testing, etc)
 
 Deliverables: 
-Delete/edit events with AI
-Resolve conflicts
-Sprint progress report
+- Delete/edit events with AI
+- Resolve conflicts
+- Sprint progress report
 
 ### SPRINT 2
 #### Week 12
-Create groups of people who need to meet as part of a team, giving access to each team member’s calendar to our chatbot to ask questions about the team’s availability.
-The Chatbot will be prompt engineered to only share general information about a team member’s availability, and not anything private. 
-Crud operations on groups,(adding, removing, and editing people)
+1. Create groups of people who need to meet as part of a team, giving access to each team member’s calendar to our chatbot to ask questions about the team’s availability.
+    - The Chatbot will be prompt engineered to only share general information about a team member’s availability, and not anything private. 
+2. Crud operations on groups,(adding, removing, and editing people)
 
 Deliverables:
-Make and manage groups/teams
-Allow the AI to add 
+- Make and manage groups/teams
+- Allow the AI to add 
 
 #### Week 13
-Allow the AI bot to schedule group meetings, having the assistant read the schedules of multiple people in a group and suggesting a time to meet. If everyone accepts the suggestion, it will get added to their calendars.
-Start Ollama and Gemini integration 
-Event/task tags 
+1. Allow the AI bot to schedule group meetings, having the assistant read the schedules of multiple people in a group and suggesting a time to meet. If everyone accepts the suggestion, it will get added to their calendars.
+2. Start Ollama and Gemini integration 
+3. Event/task tags 
 
 Deliverables:
-Build foundation for Ollama and Gemini integration
-AI interacting with group/team events to help coordinate
+- Build foundation for Ollama and Gemini integration
+- AI interacting with group/team events to help coordinate
 
 #### Week 14
-Wrap up Ollama and Gemini integration
-Provide analytics on how much time is devoted to each task/event (e.g. “Over the last two weeks you spent an average of X hours in the Gym”)
-The AI can analyze deadlines, task importance, and past user behavior to suggest an optimal order for completing tasks.
-Final deployment and project wrap-up
+1. Wrap up Ollama and Gemini integration
+2. Provide analytics on how much time is devoted to each task/event (e.g. “Over the last two weeks you spent an average of X hours in the Gym”)
+3. The AI can analyze deadlines, task importance, and past user behavior to suggest an optimal order for completing tasks.
+4. Final deployment and project wrap-up
 
 Deliverables
-Finish Ollama and Gemini integration
-Testing
-Ensure smooth deployment
-Analytics
+- Finish Ollama and Gemini integration
+- Testing
+- Ensure smooth deployment
+- Analytics
 
 ## Key Milestones
 1. March 14: Project infrastructure complete with authentication and Google Calendar API implemented
