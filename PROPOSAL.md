@@ -112,8 +112,14 @@ Deliverables:
 
 #### Week 13
 1. Allow the AI bot to schedule group meetings, having the assistant read the schedules of multiple people in a group and suggesting a time to meet. If everyone accepts the suggestion, it will get added to their calendars.
-2. Start Ollama and Gemini integration 
+   - Prompt AI to fetch current user and other people within the group's schedules and parse for conflicts. Suggest time(s) for a meeting to be sent as an invite to the group members
+2. Start Ollama and Gemini integration
+   -Frontend/UI: Settings option to alternate between Ollama, Gemini, and OpenAI integration
+    - Create logic for Ollama and Gemini to handle the same tasks as OpenAI
 3. Event/task tags 
+    -UI design to add tags to event/tasks
+    -Database to store events/tasks by tags
+    -Allow users to add, edit, delete tags
 
 Deliverables:
 - Build foundation for Ollama and Gemini integration
@@ -121,9 +127,16 @@ Deliverables:
 
 #### Week 14
 1. Wrap up Ollama and Gemini integration
+    -Test Ollama and Gemini Integration, test task performance
 2. Provide analytics on how much time is devoted to each task/event (e.g. “Over the last two weeks you spent an average of X hours in the Gym”)
+    -Store data based on tasks/events tags and based on event/task names
 3. The AI can analyze deadlines, task importance, and past user behavior to suggest an optimal order for completing tasks.
+   -Rank task importance based on deadlines by week
+    -Return to user which tasks are importance based on deadline
 4. Final deployment and project wrap-up
+   -Stress testing features
+    -Go through each user story testing the application
+
 
 Deliverables
 - Finish Ollama and Gemini integration
