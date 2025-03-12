@@ -1,8 +1,9 @@
 import { cn } from "@/lib/utils";
-
+import SignInWithGoogle from "./components/SignInWithGoogle";
 const DEBUG = false;
 
 function App() {
+  
   return (
     <div
       className={cn(
@@ -22,7 +23,7 @@ function App() {
       >
       </div>
       <div className="max-w-md">
-        Hello World!
+        <SignInWithGoogle />
       </div>
     </div>
   )
