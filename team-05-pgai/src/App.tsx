@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import LoginCard from "./components/LoginCard";
 
 const DEBUG = false;
 
@@ -22,7 +23,7 @@ function App() {
       >
       </div>
       <div className="max-w-md">
-        Hello World!
+        <LoginCard />
       </div>
     </div>
   )
