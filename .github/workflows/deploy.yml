@@ -25,28 +25,26 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4.1.6
+      with:
+        path: 'team-05-pgai'
 
     - name: Install pnpm
       run: npm install -g pnpm
-      with:
-        path: "team-05-pgai"
     
     - name: Setup node
       uses: actions/setup-node@v4
       with:
         node-version: 'latest'
         cache: "pnpm"
-        path: "team-05-pgai"
+        cache-dependency-path: 'team-05-pgai/pnpm-lock.yaml'
       
     - name: Install dependencies
       run: pnpm install
-      with:
-        path: "team-05-pgai"
+      working-directory: team-05-pgai
 
     - name: Build React App
       run: npx convex deploy --cmd 'pnpm run build'
-      with:
-        path: "team-05-pgai"
+      working-directory: team-05-pgai
       env:
         CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
