@@ -36,7 +36,7 @@ jobs:
       with:
         node-version: 'latest'
         cache: "pnpm"
-        cache-dependency-path: "team-05-pgai/pnpm-lock.yaml,team-05-pgai/package.json"
+        cache-dependency-path: "pnpm-lock.yaml,package.json"
       
     - name: Install dependencies
       run: pnpm install
