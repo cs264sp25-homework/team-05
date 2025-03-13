@@ -31,12 +31,14 @@ jobs:
     - name: Install pnpm
       run: npm install -g pnpm
     
-    - name: Setup node
+    - name: Setup Node
       uses: actions/setup-node@v4
       with:
         node-version: 'latest'
         cache: "pnpm"
-        cache-dependency-path: 'team-05-pgai/pnpm-lock.yaml'
+        cache-dependency-path: |
+          team-05-pgai/pnpm-lock.yaml
+          team-05-pgai/package.json
       
     - name: Install dependencies
       run: pnpm install
