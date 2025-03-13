@@ -25,8 +25,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4.1.6
-      with:
-        path: 'team-05-pgai'
 
     - name: Install pnpm
       run: npm install -g pnpm
@@ -38,16 +36,13 @@ jobs:
       
     - name: Install dependencies
       run: pnpm install
-      working-directory: team-05-pgai
 
     - name: Build React App
       run: npx convex deploy --cmd 'pnpm run build'
-      working-directory: team-05-pgai
       env:
         CONVEX_DEPLOY_KEY: ${{ secrets.CONVEX_DEPLOY_KEY }}
         VITE_BASE_URL: ${{ secrets.VITE_BASE_URL }}
     
-
     - name: Upload build artifact
       if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       uses: actions/upload-artifact@v4
