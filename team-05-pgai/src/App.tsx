@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import SignInWithGoogle from "./components/SignInWithGoogle";
+import SignOut from "./components/SignOut";
 const DEBUG = false;
 
 function App() {
@@ -24,6 +25,8 @@ function App() {
       </div>
       <div className="max-w-md">
         <SignInWithGoogle />
+        <br></br>
+        <SignOut />
       </div>
     </div>
   )
