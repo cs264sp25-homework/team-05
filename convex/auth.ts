@@ -11,7 +11,7 @@ export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
           prompt: "consent",
           access_type: "offline",
           response_type: "code",
-          scope: "openid email profile https://www.googleapis.com/auth/calendar.readonly"
+          scope: "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid https://www.googleapis.com/auth/calendar"
         }
       }
     })
