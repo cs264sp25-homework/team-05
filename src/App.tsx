@@ -1,32 +1,28 @@
-import { cn } from "@/lib/utils";
-import SignInWithGoogle from "./components/SignInWithGoogle";
-const DEBUG = false;
+import { SignInButton, SignOutButton, UserButton } from "@clerk/clerk-react";
+import { Authenticated, Unauthenticated, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
+import GoogleCalendarEvents from "./components/testclerk";
 
 function App() {
-  
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center h-screen gap-5",
-        {
-          "border-2 border-red-500": DEBUG,
-        },
-      )}
-    >
-      <div
-        className={cn(
-          "flex items-center justify-start font-semibold text-xl3",
-          {
-            "border-2 border-blue-500": DEBUG,
-          },
-        )}
-      >
+    <div className="App">
+      <SignInButton mode="modal"/>
+      <Authenticated>Signed in</Authenticated>
+      <Unauthenticated>not signed in :</Unauthenticated>
+      <GoogleCalendarEvents/>
+      <SignOutButton/>
       </div>
-      <div className="max-w-md">
-        <SignInWithGoogle />
-      </div>
-    </div>
-  )
+  );
 }
 
-export default App
+
+// https://www.googleapis.com/auth/calendar.readonly
+
+
+
+
+// function Content() {
+//   return <div>Authenticated content</div>;
+// }
+
+export default App;
