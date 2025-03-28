@@ -15,6 +15,8 @@ import type {
 } from "convex/server";
 import type * as auth from "../auth.js";
 import type * as http from "../http.js";
+import type * as messages from "../messages.js";
+import type * as openai from "../openai.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -27,6 +29,8 @@ import type * as http from "../http.js";
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   http: typeof http;
+  messages: typeof messages;
+  openai: typeof openai;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,
