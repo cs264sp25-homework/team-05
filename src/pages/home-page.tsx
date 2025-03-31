@@ -8,14 +8,21 @@ const HomePage: React.FC = () => {
     const { navigate } = useRouter();
     return (
     <div>
-    <div className="App">
-      <SignInButton mode="modal"/>
-      <Authenticated>Signed in</Authenticated>
-      <Unauthenticated>not signed in :</Unauthenticated>
-      <GoogleCalendarEvents/>
+    <div className="flex flex-col items-center justify-center min-h-svh">
+      
+      <Authenticated>
+      <Button onClick={() => navigate("chats")}>Open Chat Interface</Button>
       <SignOutButton/>
+      </Authenticated>
+
+
+      <Unauthenticated>
+        <SignInButton mode="modal"/>
+      </Unauthenticated>
+      {/* <GoogleCalendarEvents/> */}
+      
       </div>
-    <Button onClick={() => navigate("chats")}>Open Chat Interface</Button>
+    
     </div>
   );
 }
