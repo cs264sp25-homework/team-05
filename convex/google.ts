@@ -61,8 +61,7 @@ export const listGoogleCalendarEvents = action({
 
 export const createGoogleCalendarEvent = action({
   args: {
-    event: v.object({
-      summary: v.string(),
+    summary: v.string(),
       description: v.optional(v.string()),
       start: v.object({
         dateTime: v.string(),
@@ -70,7 +69,6 @@ export const createGoogleCalendarEvent = action({
       end: v.object({
         dateTime: v.string(),
       }),
-    })
   },
   handler: async (ctx, args) => {
 
@@ -83,7 +81,7 @@ export const createGoogleCalendarEvent = action({
     
     const response = await google.calendar("v3").events.insert({
       calendarId: "primary",
-      requestBody: args.event,
+      requestBody: args,
       auth: client,
 
     });
