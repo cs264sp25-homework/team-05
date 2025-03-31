@@ -90,3 +90,61 @@ export const createGoogleCalendarEvent = action({
   }
 
 })
+
+export const updateGoogleCalendarEvent = action({
+  args: {
+    event: v.object({
+      eventId: v.string(),
+      summary: v.string(),
+      description: v.optional(v.string()),
+      start: v.object({
+        dateTime: v.string(),
+      }),
+      end: v.object({
+        dateTime: v.string(),
+      }),
+    })
+  },
+  handler: async (ctx, args) => {
+    const token = await ctx.runAction(internal.google.getAccessToken);
+    client.setCredentials({
+      access_token: token,
+      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+    });
+    
+    const response = await google.calendar("v3").events.update({
+      calendarId: "primary",
+      eventId: args.event.eventId,
+      requestBody: {
+        summary: args.event.summary,
+        description: args.event.description,
+        start: args.event.start,
+        end: args.event.end,
+      },
+      auth: client,
+    });
+
+    return response.data;
+  }
+});
+
+export const deleteGoogleCalendarEvent = action({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const token = await ctx.runAction(internal.google.getAccessToken);
+    client.setCredentials({
+      access_token: token,
+      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+    });
+    
+    await google.calendar("v3").events.delete({
+      calendarId: "primary",
+      eventId: args.eventId,
+      auth: client,
+    });
+
+    return true;
+  }
+});

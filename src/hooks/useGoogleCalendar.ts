@@ -19,6 +19,9 @@ export function useGoogleCalendar() {
   const [code] = useState("");
 
   const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
+  const createEvent = useAction(api.google.createGoogleCalendarEvent);
+  const updateEventAction = useAction(api.google.updateGoogleCalendarEvent);
+  const deleteEventAction = useAction(api.google.deleteGoogleCalendarEvent);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -62,7 +65,6 @@ export function useGoogleCalendar() {
     setIsLoading(true);
     setError(null);
     try {
-      const createEvent = useAction(api.google.createGoogleCalendarEvent);
       const newEvent = await createEvent({
         event: {
           summary: event.title,
@@ -93,11 +95,70 @@ export function useGoogleCalendar() {
     }
   };
 
+  const updateEvent = async (eventId: string, updatedEvent: Omit<CalendarEvent, 'id'>) => {
+    if (!isAuthenticated) throw new Error('Not authenticated');
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      const updatedGoogleEvent = await updateEventAction({
+        event: {
+          eventId,
+          summary: updatedEvent.title,
+          start: {
+            dateTime: updatedEvent.start,
+          },
+          end: {
+            dateTime: updatedEvent.end,
+          }
+        }
+      });
+
+      if (updatedGoogleEvent?.id) {
+        setEvents(prev => prev.map(event => 
+          event.id === eventId 
+            ? {
+                id: eventId,
+                title: updatedGoogleEvent.summary || 'Untitled Event',
+                start: (updatedGoogleEvent.start?.dateTime || updatedGoogleEvent.start?.date || updatedEvent.start),
+                end: (updatedGoogleEvent.end?.dateTime || updatedGoogleEvent.end?.date || updatedEvent.end),
+                allDay: !updatedGoogleEvent.start?.dateTime
+              }
+            : event
+        ));
+      }
+      return updatedGoogleEvent;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to update event'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteEvent = async (eventId: string) => {
+    if (!isAuthenticated) throw new Error('Not authenticated');
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      await deleteEventAction({ eventId });
+      setEvents(prev => prev.filter(event => event.id !== eventId));
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to delete event'));
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     events,
     isLoading,
     error,
     loadEvents,
-    addEvent
+    addEvent,
+    updateEvent,
+    deleteEvent
   };
 } 
