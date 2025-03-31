@@ -30,34 +30,31 @@ export const getAccessToken = internalAction({
 export const listGoogleCalendarEvents = action({
     args: { 
       accessToken: v.string(), 
-      code: v.string() 
+      code: v.string(),
+      startDate: v.string(),
+      endDate: v.string()
     },
-    handler: async (ctx) => {    
-
+    handler: async (ctx, args) => {    
       const token = await ctx.runAction(internal.google.getAccessToken);
   
       client.setCredentials({
         access_token: token,
       });
   
-  
-      const start = new Date("March 18, 2025 23:15:30");
-      const end = new Date("March 29, 2025 23:15:30");
-  
       const events = await google.calendar("v3").events.list({
         calendarId: "primary",
         eventTypes: ["default"],
         singleEvents: true,
-        timeMin: start.toISOString(),
-        timeMax: end.toISOString(),
-        maxResults: 10,
+        timeMin: args.startDate,
+        timeMax: args.endDate,
+        maxResults: 2500,
+        orderBy: "startTime",
         auth: client,
       });
     
-  
       return events.data.items || [];
-    }}
-)
+    }
+})
 
 export const createGoogleCalendarEvent = action({
   args: {

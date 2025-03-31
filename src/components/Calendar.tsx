@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import timeGridPlugin from '@fullcalendar/timegrid'
@@ -6,7 +6,27 @@ import interactionPlugin from '@fullcalendar/interaction'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 
 export default function Calendar() {
-  const { events, isLoading, error, addEvent } = useGoogleCalendar()
+  const { events, isLoading, error, addEvent, loadEvents } = useGoogleCalendar()
+  const [currentViewDates, setCurrentViewDates] = useState({
+    start: new Date().toISOString(),
+    end: new Date().toISOString()
+  });
+
+  const handleDatesSet = (arg: any) => {
+    const newStart = arg.start.toISOString();
+    const newEnd = arg.end.toISOString();
+    
+    // Only reload if dates have changed
+    if (newStart !== currentViewDates.start || newEnd !== currentViewDates.end) {
+      setCurrentViewDates({ start: newStart, end: newEnd });
+      loadEvents(newStart, newEnd);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadEvents(currentViewDates.start, currentViewDates.end);
+  }, []);
 
   if (error) {
     return <div className="text-red-500">Error loading calendar: {error.message}</div>
@@ -46,6 +66,7 @@ export default function Calendar() {
         dayMaxEvents={true}
         events={events}
         eventAdd={handleEventAdd}
+        datesSet={handleDatesSet}
         eventClick={(info) => {
           info.jsEvent.preventDefault()
           if (info.event.url) {
