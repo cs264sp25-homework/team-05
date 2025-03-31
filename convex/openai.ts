@@ -5,11 +5,23 @@ import { streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
 
-const createEventParams = z.object({
+export const createEventParams = z.object({
   summary: z.string(),
   description: z.string(),
   location: z.string(),
+  startDate: z.string().date(),
+  endDate: z.string().date()
 })
+
+// export const createTaskParams = z.object({
+//   summary: z.string(),
+//   description: z.string(),
+//   location: z.string().optional(),
+//   startDate: z.string().date(),
+//   endDate: z.string().date(),
+//   priority: z.string()
+// })
+
 
 export const completion = internalAction({
     args: {
@@ -56,27 +68,36 @@ export const completion = internalAction({
         
           const { textStream } = streamText({
             model: openai('gpt-4o'),
-            // tools: {
-            //   addEvent: tool({
-            //     description: "Add an event to the user's calendar",
-            //     parameters: z.object({
-            //       query: z
-            //         .string()
-            //         .describe("The query to search the uploaded files for"),
-            //       }),
-            //       execute: async ({ query, fileIds }) => {
-            //         await ctx.runMutation(internal.messages.update, {
-            //           messageId: args.placeholderMessageId,
-            //           content: `🔍 Searching for information...`,
-            //         });
-            //         return ctx.runAction(internal.chunks.search, {
-            //           query,
-            //           fileIds: fileIds?.map((id) => id as Id<"files">),
-            //           chatId: args.chatId,
-            //         });
-            //       },
-            //   })
-            // },
+            tools: {
+              addEvent: tool({
+                description: 
+                "Creates and adds an event to the user's calendar based on the provided details.",
+                parameters: createEventParams,
+                execute: async({}) => {
+                  return  
+                }
+
+              })
+              // addEvent: tool({
+              //   description: "Add an event to the user's calendar",
+              //   parameters: z.object({
+              //     query: z
+              //       .string()
+              //       .describe("The query to search the uploaded files for"),
+              //     }),
+              //     execute: async ({ query, fileIds }) => {
+              //       await ctx.runMutation(internal.messages.update, {
+              //         messageId: args.placeholderMessageId,
+              //         content: `🔍 Searching for information...`,
+              //       });
+              //       return ctx.runAction(internal.chunks.search, {
+              //         query,
+              //         fileIds: fileIds?.map((id) => id as Id<"files">),
+              //         chatId: args.chatId,
+              //       });
+              //     },
+              // })
+            },
             messages: [
                 {
                     role: "system",
