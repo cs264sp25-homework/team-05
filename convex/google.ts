@@ -61,35 +61,42 @@ export const createGoogleCalendarEvent = action({
     event: v.object({
       summary: v.string(),
       description: v.optional(v.string()),
+      location: v.optional(v.string()),
+      colorId: v.optional(v.string()),
       start: v.object({
         dateTime: v.string(),
+        timeZone: v.optional(v.string()),
       }),
       end: v.object({
         dateTime: v.string(),
+        timeZone: v.optional(v.string()),
       }),
+      recurrence: v.optional(v.array(v.string())), // RRULE strings
+      reminders: v.optional(v.object({
+        useDefault: v.boolean(),
+        overrides: v.optional(v.array(v.object({
+          method: v.string(),
+          minutes: v.number(),
+        }))),
+      })),
     })
   },
   handler: async (ctx, args) => {
-
     const token = await ctx.runAction(internal.google.getAccessToken);
     client.setCredentials({
       access_token: token,
       scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
-
     });
     
     const response = await google.calendar("v3").events.insert({
       calendarId: "primary",
       requestBody: args.event,
       auth: client,
-
     });
 
     return response.data;
-    
   }
-
-})
+});
 
 export const updateGoogleCalendarEvent = action({
   args: {

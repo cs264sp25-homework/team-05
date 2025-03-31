@@ -37,17 +37,18 @@ export default function Calendar() {
     return <div className="text-red-500">Error loading calendar: {error.message}</div>
   }
 
-  const handleDateSelect = (selectInfo: any) => {
-    setSelectedDate(selectInfo.start)
-    setIsEventDialogOpen(true)
-  }
+  const handleSelect = (selectInfo: any) => {
+    setSelectedDate(selectInfo.start);
+    setIsEventDialogOpen(true);
+    selectInfo.view.calendar.unselect(); // Clear the selection
+  };
 
-  const handleEventAdd = async (eventDetails: { title: string; start: string; end: string }) => {
+  const handleEventAdd = async (eventDetails: any) => {
     try {
       await addEvent({
-        title: eventDetails.title,
-        start: eventDetails.start,
-        end: eventDetails.end,
+        title: eventDetails.summary,
+        start: eventDetails.start.dateTime,
+        end: eventDetails.end.dateTime,
         allDay: false
       })
     } catch (error) {
@@ -102,7 +103,7 @@ export default function Calendar() {
         selectMirror={true}
         dayMaxEvents={true}
         events={events}
-        select={handleDateSelect}
+        select={handleSelect}
         eventChange={handleEventChange}
         eventClick={handleEventClick}
         datesSet={handleDatesSet}
