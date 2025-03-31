@@ -108,42 +108,56 @@ export default function Calendar() {
         eventClick={handleEventClick}
         datesSet={handleDatesSet}
         eventContent={(arg) => (
-          <div className="flex items-center justify-between w-full px-1">
-            <span>{arg.event.title}</span>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button 
-                  className="text-red-500 hover:text-red-700"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  ×
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Event</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete this event? This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={async () => {
-                      try {
-                        await deleteEvent(arg.event.id);
-                      } catch (error) {
-                        console.error('Error deleting event:', error);
-                      }
-                    }}
+          <div className={`flex items-center justify-between w-full px-1 ${
+            arg.view.type === 'dayGridMonth' ? 'truncate max-w-full' : 'w-full'
+          }`}>
+            <span className="truncate block">{arg.event.title}</span>
+            {(arg.view.type === 'timeGridWeek' || arg.view.type === 'timeGridDay') && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button 
+                    className="text-red-500 hover:text-red-700"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    ×
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Event</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this event? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={async () => {
+                        try {
+                          await deleteEvent(arg.event.id);
+                        } catch (error) {
+                          console.error('Error deleting event:', error);
+                        }
+                      }}
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         )}
+        eventClassNames="truncate"
+        dayCellClassNames="overflow-hidden"
+        height="auto"
+        dayMaxEventRows={3}
+        views={{
+          dayGridMonth: {
+            eventMaxStack: 3,
+            dayMaxEvents: 3,
+          }
+        }}
       />
       <EventDialog
         isOpen={isEventDialogOpen}
