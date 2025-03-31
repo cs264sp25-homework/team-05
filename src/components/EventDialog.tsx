@@ -12,6 +12,8 @@ interface EventDialogProps {
   onClose: () => void
   onSubmit: (event: any) => void
   selectedDate?: Date
+  initialData?: any
+  mode?: 'create' | 'edit'
 }
 
 const REPEAT_OPTIONS = [
@@ -36,14 +38,16 @@ const COLOR_OPTIONS = [
   { id: "11", name: "Tomato" },
 ];
 
-export function EventDialog({ isOpen, onClose, onSubmit, selectedDate }: EventDialogProps) {
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [location, setLocation] = useState("")
+export function EventDialog({ isOpen, onClose, onSubmit, selectedDate, initialData, mode = 'create' }: EventDialogProps) {
+  const [title, setTitle] = useState(initialData?.summary || "")
+  const [description, setDescription] = useState(initialData?.description || "")
+  const [location, setLocation] = useState(initialData?.location || "")
   const [startDate, setStartDate] = useState(
-    selectedDate 
-      ? new Date(selectedDate.setMinutes(0)).toISOString().slice(0, 16)
-      : new Date().toISOString().slice(0, 16)
+    initialData?.start?.dateTime
+      ? new Date(initialData.start.dateTime).toISOString().slice(0, 16)
+      : selectedDate 
+        ? new Date(selectedDate.setMinutes(0)).toISOString().slice(0, 16)
+        : new Date().toISOString().slice(0, 16)
   )
   const [endDate, setEndDate] = useState(
     selectedDate 
@@ -97,7 +101,7 @@ export function EventDialog({ isOpen, onClose, onSubmit, selectedDate }: EventDi
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Event</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Add New Event' : 'Edit Event'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -212,7 +216,7 @@ export function EventDialog({ isOpen, onClose, onSubmit, selectedDate }: EventDi
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Create Event</Button>
+            <Button type="submit">{mode === 'create' ? 'Create' : 'Save'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -9,6 +9,10 @@ interface CalendarEvent {
   start: string;
   end: string;
   allDay?: boolean;
+  description?: string;
+  location?: string;
+  recurrence?: string[];
+  colorId?: string;
 }
 
 export function useGoogleCalendar() {

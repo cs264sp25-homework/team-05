@@ -7,6 +7,7 @@ import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { EventDialog } from '@/components/EventDialog'
 import { Button } from './ui/button'
+import { EventDetailsDialog } from '@/components/EventDetailsDialog'
 
 export default function Calendar() {
   const { events, isLoading, error, addEvent, updateEvent, deleteEvent, loadEvents } = useGoogleCalendar()
@@ -16,6 +17,8 @@ export default function Calendar() {
   });
   const [isEventDialogOpen, setIsEventDialogOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date>()
+  const [selectedEvent, setSelectedEvent] = useState<any>(null)
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
 
   const handleDatesSet = (arg: any) => {
     const newStart = arg.start.toISOString();
@@ -72,11 +75,13 @@ export default function Calendar() {
 
   const handleEventClick = (info: any) => {
     if (info.event.url) {
-      info.jsEvent.preventDefault();
-      window.open(info.event.url);
-      return;
+      info.jsEvent.preventDefault()
+      window.open(info.event.url)
+      return
     }
-  };
+    setSelectedEvent(info.event)
+    setIsDetailsDialogOpen(true)
+  }
 
   return (
     <div className="h-full relative">
@@ -165,6 +170,39 @@ export default function Calendar() {
         onSubmit={handleEventAdd}
         selectedDate={selectedDate}
       />
+      {selectedEvent && (
+        <EventDetailsDialog
+          isOpen={isDetailsDialogOpen}
+          onClose={() => {
+            setIsDetailsDialogOpen(false)
+            setSelectedEvent(null)
+          }}
+          event={selectedEvent}
+          onDelete={async () => {
+            try {
+              await deleteEvent(selectedEvent.id)
+              setIsDetailsDialogOpen(false)
+              setSelectedEvent(null)
+            } catch (error) {
+              console.error('Error deleting event:', error)
+            }
+          }}
+          onUpdate={async (updatedEvent) => {
+            try {
+              await updateEvent(selectedEvent.id, {
+                title: updatedEvent.summary,
+                start: updatedEvent.start.dateTime,
+                end: updatedEvent.end.dateTime,
+                description: updatedEvent.description,
+                location: updatedEvent.location,
+                // ... other fields ...
+              })
+            } catch (error) {
+              console.error('Error updating event:', error)
+            }
+          }}
+        />
+      )}
     </div>
   )
 } 
