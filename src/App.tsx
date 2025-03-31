@@ -63,6 +63,7 @@ function App() {
       rightPanelContent={right}
       className="h-screen"
     />
+
   );
 }
 
