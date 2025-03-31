@@ -11,6 +11,7 @@ import ListChatsPage from "./pages/chats/list-chats-page";
 import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
 import MessagesPage from "./pages/messages/messages-page";
+import { ClerkProvider } from '@clerk/clerk-react';
 
 
 function App() {
@@ -33,37 +34,44 @@ function App() {
           middle: <Empty message="Select a chat to view its messages." />,
           right: null,
         }
-        case "addChat":
-          return {
-            left: <ListChatsPage />,
-            middle: <AddChatPage />,
-            right: null,
-          };
-        case "editChat":
-          return {
-            left: <ListChatsPage />,
-            middle: <EditChatPage chatId={params.chatId as string} />,
-            right: null,
-          };
-        case "messages":
-          return {
-            left: <ListChatsPage />,
-            middle: <MessagesPage chatId={params.chatId as string} />,
-            right: null,
-          };
+      case "addChat":
+        return {
+          left: <ListChatsPage />,
+          middle: <AddChatPage />,
+          right: null,
+        };
+      case "editChat":
+        return {
+          left: <ListChatsPage />,
+          middle: <EditChatPage chatId={params.chatId as string} />,
+          right: null,
+        };
+      case "messages":
+        return {
+          left: <ListChatsPage />,
+          middle: <MessagesPage chatId={params.chatId as string} />,
+          right: null,
+        };
+      default:
+        return {
+          left: null,
+          middle: <Empty message="Page not found" />,
+          right: null,
+        };
     }
   }
 
   const { left, middle, right } = renderContent();
 
   return (
-    <Layout
-      leftPanelContent={left}
-      middlePanelContent={middle}
-      rightPanelContent={right}
-      className="h-screen"
-    />
-
+    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+      <Layout
+        leftPanelContent={left}
+        middlePanelContent={middle}
+        rightPanelContent={right}
+        className="h-screen"
+      />
+    </ClerkProvider>
   );
 }
 

@@ -30,38 +30,78 @@ export const getAccessToken = internalAction({
 export const listGoogleCalendarEvents = action({
     args: { 
       accessToken: v.string(), 
-      code: v.string() 
+      code: v.string(),
+      startDate: v.string(),
+      endDate: v.string()
     },
-    handler: async (ctx) => {    
-
+    handler: async (ctx, args) => {    
       const token = await ctx.runAction(internal.google.getAccessToken);
   
       client.setCredentials({
         access_token: token,
       });
   
-  
-      const start = new Date("March 18, 2025 23:15:30");
-      const end = new Date("March 29, 2025 23:15:30");
-  
       const events = await google.calendar("v3").events.list({
         calendarId: "primary",
         eventTypes: ["default"],
         singleEvents: true,
-        timeMin: start.toISOString(),
-        timeMax: end.toISOString(),
-        maxResults: 10,
+        timeMin: args.startDate,
+        timeMax: args.endDate,
+        maxResults: 2500,
+        orderBy: "startTime",
         auth: client,
       });
     
-  
       return events.data.items || [];
-    }}
-)
+    }
+})
 
 export const createGoogleCalendarEvent = action({
   args: {
     event: v.object({
+      summary: v.string(),
+      description: v.optional(v.string()),
+      location: v.optional(v.string()),
+      colorId: v.optional(v.string()),
+      start: v.object({
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      end: v.object({
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      recurrence: v.optional(v.array(v.string())), // RRULE strings
+      reminders: v.optional(v.object({
+        useDefault: v.boolean(),
+        overrides: v.optional(v.array(v.object({
+          method: v.string(),
+          minutes: v.number(),
+        }))),
+      })),
+    })
+  },
+  handler: async (ctx, args) => {
+    const token = await ctx.runAction(internal.google.getAccessToken);
+    client.setCredentials({
+      access_token: token,
+      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+    });
+    
+    const response = await google.calendar("v3").events.insert({
+      calendarId: "primary",
+      requestBody: args.event,
+      auth: client,
+    });
+
+    return response.data;
+  }
+});
+
+export const updateGoogleCalendarEvent = action({
+  args: {
+    event: v.object({
+      eventId: v.string(),
       summary: v.string(),
       description: v.optional(v.string()),
       start: v.object({
@@ -73,23 +113,45 @@ export const createGoogleCalendarEvent = action({
     })
   },
   handler: async (ctx, args) => {
-
     const token = await ctx.runAction(internal.google.getAccessToken);
     client.setCredentials({
       access_token: token,
       scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
-
     });
     
-    const response = await google.calendar("v3").events.insert({
+    const response = await google.calendar("v3").events.update({
       calendarId: "primary",
-      requestBody: args.event,
+      eventId: args.event.eventId,
+      requestBody: {
+        summary: args.event.summary,
+        description: args.event.description,
+        start: args.event.start,
+        end: args.event.end,
+      },
       auth: client,
-
     });
 
     return response.data;
-    
   }
+});
 
-})
+export const deleteGoogleCalendarEvent = action({
+  args: {
+    eventId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const token = await ctx.runAction(internal.google.getAccessToken);
+    client.setCredentials({
+      access_token: token,
+      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+    });
+    
+    await google.calendar("v3").events.delete({
+      calendarId: "primary",
+      eventId: args.eventId,
+      auth: client,
+    });
+
+    return true;
+  }
+});
