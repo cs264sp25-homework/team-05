@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import { ConvexReactClient } from "convex/react";
-import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 

@@ -3,6 +3,13 @@ import { internalAction } from "./_generated/server";
 import {createOpenAI, openai } from "@ai-sdk/openai";
 import { streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
+import { z } from "zod";
+
+const createEventParams = z.object({
+  summary: z.string(),
+  description: z.string(),
+  location: z.string(),
+})
 
 export const completion = internalAction({
     args: {
@@ -49,6 +56,27 @@ export const completion = internalAction({
         
           const { textStream } = streamText({
             model: openai('gpt-4o'),
+            // tools: {
+            //   addEvent: tool({
+            //     description: "Add an event to the user's calendar",
+            //     parameters: z.object({
+            //       query: z
+            //         .string()
+            //         .describe("The query to search the uploaded files for"),
+            //       }),
+            //       execute: async ({ query, fileIds }) => {
+            //         await ctx.runMutation(internal.messages.update, {
+            //           messageId: args.placeholderMessageId,
+            //           content: `🔍 Searching for information...`,
+            //         });
+            //         return ctx.runAction(internal.chunks.search, {
+            //           query,
+            //           fileIds: fileIds?.map((id) => id as Id<"files">),
+            //           chatId: args.chatId,
+            //         });
+            //       },
+            //   })
+            // },
             messages: [
                 {
                     role: "system",
