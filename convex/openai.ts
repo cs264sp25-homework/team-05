@@ -4,13 +4,18 @@ import {createOpenAI, openai } from "@ai-sdk/openai";
 import { streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
+import { createGoogleCalendarEvent } from "./google";
 
 export const createEventParams = z.object({
-  summary: z.string(),
-  description: z.string(),
-  location: z.string(),
-  startDate: z.string().date(),
-  endDate: z.string().date()
+  summary: z.string().describe("Like the title or name of the event" ),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  start: z.object({
+    dateTime: z.string().describe("The start date must be in ISO format"),
+  }),
+  end: z.object({
+    dateTime: z.string().describe("The end date must be later than the start date and in ISO format"),
+  })
 })
 
 // export const createTaskParams = z.object({
@@ -56,6 +61,16 @@ export const completion = internalAction({
         3. Offer good scheduling practices
         - Whenever a user asks you for suggestions, make sure to offer advice on how they can get better at scheduling
 
+        When providing a way to schedule tasks, present the tasks in this format:
+
+        summary: <summary>
+        description: <description>
+        location: <location>
+        startDate: <startDate>
+        endDate: <endDate>
+        
+        and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`addEvent\` function to schedule the tasks.
+
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can't answer a question, clearly communicate that to the user.
 
         `
@@ -71,10 +86,17 @@ export const completion = internalAction({
             tools: {
               addEvent: tool({
                 description: 
-                "Creates and adds an event to the user's calendar based on the provided details.",
+                "Creates and adds an event to the user's calendar based on the provided details. The user needs to provide a end date that is later than the start date and a summary of the event.",
                 parameters: createEventParams,
-                execute: async({}) => {
-                  return  
+                execute: async (createEventParams) => {
+                  await ctx.runMutation(internal.messages.update, {
+                    messageId: args.placeholderMessageId,
+                    content: `Creating an event...`,
+                  });
+                  console.log("Creating event with params: ", createEventParams);
+                  return ctx.runAction(api.google.createGoogleCalendarEvent, {
+                    ...createEventParams,
+                  })
                 }
 
               })
