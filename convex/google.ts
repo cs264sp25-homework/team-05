@@ -1,9 +1,10 @@
 "use node";
 import { v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { action, internalAction, mutation } from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
 import { internal } from "./_generated/api";
+import { literal } from "zod";
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_OAUTH_CLIENT_ID,
@@ -15,6 +16,7 @@ export const getAccessToken = internalAction({
   handler: async (ctx) => {
     const user_id = await ctx.auth.getUserIdentity();
     if (!user_id) {
+      console.log("User id is null :(")
       return;
     }
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
@@ -36,7 +38,6 @@ export const listGoogleCalendarEvents = action({
     },
     handler: async (ctx, args) => {    
       const token = await ctx.runAction(internal.google.getAccessToken);
-  
       client.setCredentials({
         access_token: token,
       });
@@ -51,12 +52,14 @@ export const listGoogleCalendarEvents = action({
         orderBy: "startTime",
         auth: client,
       });
+
+      console.log("Got the events!!!");
     
       return events.data.items || [];
     }
 })
 
-export const createGoogleCalendarEvent = action({
+export const createGoogleCalendarEvent = internalAction({
   args: {
     event: v.object({
       summary: v.string(),
@@ -71,7 +74,7 @@ export const createGoogleCalendarEvent = action({
         dateTime: v.string(),
         timeZone: v.optional(v.string()),
       }),
-      recurrence: v.optional(v.array(v.string())), // RRULE strings
+      recurrence: v.optional(v.array(v.string())), 
       reminders: v.optional(v.object({
         useDefault: v.boolean(),
         overrides: v.optional(v.array(v.object({
@@ -79,20 +82,50 @@ export const createGoogleCalendarEvent = action({
           minutes: v.number(),
         }))),
       })),
-    })
+    }),
+    userId: v.any(),
   },
   handler: async (ctx, args) => {
-    const token = await ctx.runAction(internal.google.getAccessToken);
+    console.log("Creating event!");
+
+    console.log("This is the new user_id", args.userId);
+
+    let param_user_id = '';
+
+    if (typeof args.userId === 'string') {
+      param_user_id = args.userId; 
+    } else {
+      param_user_id = args.userId.subject;
+    }
+    
+
+    // const token = await ctx.runAction(internal.google.getAccessToken);
+
+    const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+    console.log("This is the real ting", args.userId.subject);
+    const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
+
+    console.log("Got the token!!!");
+
+    console.log("This is the event that was sent in", args.event);
+
+
+
+
     client.setCredentials({
-      access_token: token,
-      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+      access_token: token.data[0].token,
     });
+
+    console.log("Token: ", token);
+    
     
     const response = await google.calendar("v3").events.insert({
       calendarId: "primary",
       requestBody: args.event,
       auth: client,
     });
+
+    console.log("Got the response data: ", response.data);
 
     return response.data;
   }

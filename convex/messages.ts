@@ -1,7 +1,8 @@
 import { ConvexError, v } from "convex/values";
 import { internalMutation, mutation, query } from "./_generated/server";
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
+import { isAuthenticated } from "./auth";
 
 export const getAll = query({
   args: {
@@ -64,6 +65,8 @@ export const create = mutation({
       messageCount: chat.messageCount + 2,
     });
 
+    const user_id = await ctx.auth.getUserIdentity();
+
     // Schedule an action that calls ChatGPT and updates the message.
     ctx.scheduler.runAfter(0, internal.openai.completion, {
       chatId: args.chatId as Id<"chats">,
@@ -72,7 +75,10 @@ export const create = mutation({
         content: message.content,
       })),
       placeholderMessageId,
+      user_id: user_id,
     });
+
+    console.log("After the mutation ran!");
 
     return messageId;
   },

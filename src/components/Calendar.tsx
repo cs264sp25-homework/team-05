@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EventDialog } from '@/components/EventDialog'
 import { Button } from './ui/button'
 import { EventDetailsDialog } from '@/components/EventDetailsDialog'
+import { useAuth } from '@clerk/clerk-react'
 
 export default function Calendar() {
   const { events, isLoading, error, addEvent, updateEvent, deleteEvent, loadEvents } = useGoogleCalendar()
@@ -19,6 +20,16 @@ export default function Calendar() {
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedEvent, setSelectedEvent] = useState<any>(null)
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
+
+  // const { userId } = useAuth();
+
+  // if (!userId) {
+  //   return;
+  // }
+
+  // localStorage.setItem("user_id", userId);
+
+  // console.log("This is the userID: ", userId);
 
   const handleDatesSet = (arg: any) => {
     const newStart = arg.start.toISOString();

@@ -64,14 +64,12 @@ function App() {
   const { left, middle, right } = renderContent();
 
   return (
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
       <Layout
         leftPanelContent={left}
         middlePanelContent={middle}
         rightPanelContent={right}
         className="h-screen"
       />
-    </ClerkProvider>
   );
 }
 

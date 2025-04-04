@@ -1,17 +1,34 @@
-import { v } from "convex/values";
-import { internalAction } from "./_generated/server";
+import { convexToJson, v } from "convex/values";
+import { action, internalAction, mutation, query } from "./_generated/server";
 import {createOpenAI, openai } from "@ai-sdk/openai";
 import { streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
+import { createGoogleCalendarEvent } from "./google";
+
+// export const createEventParams = z.object({
+//   summary: z.string(),
+//   startDate: z.string().date().describe("Has to be formatted as follows: '2025-04-04T11:02:00.000Z'"),
+//   endDate: z.string().date().describe("Has to be formatted as follows: '2025-04-04T11:02:00.000Z'")
+// })
 
 export const createEventParams = z.object({
-  summary: z.string(),
-  description: z.string(),
-  location: z.string(),
-  startDate: z.string().date(),
-  endDate: z.string().date()
+  summary: z.string().describe("Like the title or name of the event" ),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  start: z.object({
+    dateTime: z.string().describe("The start date must be in ISO format"),
+  }),
+  end: z.object({
+    dateTime: z.string().describe("The end date must be later than the start date and in ISO format"),
+  })
 })
+
+
+
+
+
+
 
 // export const createTaskParams = z.object({
 //   summary: z.string(),
@@ -20,6 +37,20 @@ export const createEventParams = z.object({
 //   startDate: z.string().date(),
 //   endDate: z.string().date(),
 //   priority: z.string()
+// })
+
+// export const getUserId = query({
+//   args: {
+
+//   },
+//   handler: async(ctx, args) => {
+//     const user_id = await ctx.auth.getUserIdentity();
+//     if (!user_id) {
+//       console.log("IN THE NEW FUNCTION IT IS NULL");
+//     }
+
+//     return user_id;
+//   }
 // })
 
 
@@ -37,66 +68,55 @@ export const completion = internalAction({
           }),
         ),
         placeholderMessageId: v.id("messages"),
+        user_id: v.any(),
       },
       handler: async(ctx, args) => {
-
-
         const instructions = `
-        
         You are a helpful assistant tasked with assisting users with scheduling different events and/or tasks.
-        
-        ### Key Responsibilities 
-        
-        1. Suggest a way to schedule a user's day based on their preferences
-        - If a user asks you a question like "I am not a morning person. How can I organize my chores, studying, and gym?" provide a way to schedule these tasks.
-        
+        ### Key Responsibilities
+        1. Suggest a way to schedule a user’s day based on their preferences
+        - If a user asks you a question like “I am not a morning person. How can I organize my chores, studying, and gym?” provide a way to schedule these tasks.
         2. Scheduling conflict related questions
         - If a user asks you to offer a suggestion on how to fix a conflict (two events at the same time), use your own judgement to determine which task should be moved
-        
         3. Offer good scheduling practices
         - Whenever a user asks you for suggestions, make sure to offer advice on how they can get better at scheduling
-
-        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can't answer a question, clearly communicate that to the user.
-
-        `
+         When providing a way to schedule tasks, present the tasks in this format:
+        summary: <summary>
+        description: <description>
+        location: <location>
+        startDate: <startDate>
+        endDate: <endDate>
+        and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
+        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
+        `;  
         
         const openai = createOpenAI({
             apiKey: process.env.OPENAI_API_KEY,
             compatibility: "strict",
           }); 
 
+        // console.log("Calling passed in userid", args.user_id);
+        // console.log("args.messages", args.messages);
+
         
           const { textStream } = streamText({
             model: openai('gpt-4o'),
             tools: {
-              addEvent: tool({
-                description: 
-                "Creates and adds an event to the user's calendar based on the provided details.",
+              createGoogleCalendarEvent: tool({
+                description: "Creates and adds an event to the user's calendar",
                 parameters: createEventParams,
-                execute: async({}) => {
-                  return  
+                execute: async(createEventParams) => {
+                  console.log("Adding an event to your calendar");
+
+                  return ctx.runAction(internal.google.createGoogleCalendarEvent, {
+                    event: {...createEventParams 
+                    },
+                    userId: args.user_id
+                  })               
+                    
                 }
 
               })
-              // addEvent: tool({
-              //   description: "Add an event to the user's calendar",
-              //   parameters: z.object({
-              //     query: z
-              //       .string()
-              //       .describe("The query to search the uploaded files for"),
-              //     }),
-              //     execute: async ({ query, fileIds }) => {
-              //       await ctx.runMutation(internal.messages.update, {
-              //         messageId: args.placeholderMessageId,
-              //         content: `🔍 Searching for information...`,
-              //       });
-              //       return ctx.runAction(internal.chunks.search, {
-              //         query,
-              //         fileIds: fileIds?.map((id) => id as Id<"files">),
-              //         chatId: args.chatId,
-              //       });
-              //     },
-              // })
             },
             messages: [
                 {
@@ -107,6 +127,17 @@ export const completion = internalAction({
             ],
             maxSteps: 10,
             temperature: 0,
+            onStepFinish: ({ 
+              text, 
+              toolCalls, 
+              toolResults,
+              request
+            }) => {
+              console.log("Text", text);
+              console.log("Tool calls:", toolCalls);
+              console.log("Tool results:", toolResults);
+              console.log("Request", request.body);
+            },
           });
 
         let fullResponse = "";
@@ -116,6 +147,14 @@ export const completion = internalAction({
                 messageId: args.placeholderMessageId,
                 content: fullResponse,
             });
+        }
+
+        if (!fullResponse.trim()) {
+          fullResponse = "I'm sorry, I couldn't process your request. Could you clarify or try again?";
+          await ctx.runMutation(internal.messages.update, {
+            messageId: args.placeholderMessageId,
+            content: fullResponse,
+          });
         }
     },
 })

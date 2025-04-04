@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAction, useConvexAuth } from 'convex/react';
 import { api } from "../../convex/_generated/api";
 import { googleCalendarService } from '@/services/googleCalendar';
+import { useAuth } from '@clerk/clerk-react';
 
 interface CalendarEvent {
   id: string;
@@ -21,6 +22,8 @@ export function useGoogleCalendar() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [code] = useState("");
+
+  const { userId } = useAuth();
 
   const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
   const createEvent = useAction(api.google.createGoogleCalendarEvent);
@@ -78,7 +81,8 @@ export function useGoogleCalendar() {
           end: {
             dateTime: event.end,
           }
-        }
+        },
+        userId: userId,
       });
 
       if (newEvent?.id) {
