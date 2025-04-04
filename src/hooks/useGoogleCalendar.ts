@@ -21,7 +21,6 @@ export function useGoogleCalendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const [code] = useState("");
 
   const { userId } = useAuth();
 
@@ -43,8 +42,6 @@ export function useGoogleCalendar() {
     setError(null);
     try {
       const functionEvents = await fetchEvents({
-        accessToken: "",
-        code: code,
         startDate,
         endDate
       });

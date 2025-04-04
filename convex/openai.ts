@@ -1,10 +1,9 @@
-import { convexToJson, v } from "convex/values";
-import { action, internalAction, mutation, query } from "./_generated/server";
+import { v } from "convex/values";
+import {  internalAction, } from "./_generated/server";
 import {createOpenAI, openai } from "@ai-sdk/openai";
 import { streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
-import { createGoogleCalendarEvent } from "./google";
 
 // export const createEventParams = z.object({
 //   summary: z.string(),
@@ -22,6 +21,11 @@ export const createEventParams = z.object({
   end: z.object({
     dateTime: z.string().describe("The end date must be later than the start date and in ISO format"),
   })
+})
+
+export const listEventsParams = z.object({
+  startDate: z.string().describe("The start date in ISO format (e.g., '2025-04-04T00:00:00.000Z')"),
+  endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
 })
 
 
@@ -87,6 +91,7 @@ export const completion = internalAction({
         startDate: <startDate>
         endDate: <endDate>
         and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
+        You can also use the \`listGoogleCalendarEvents\` function to check for existing events in the user's calendar to avoid conflicts. As well as to suggest time slots for new events.
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
         `;  
         
@@ -94,9 +99,6 @@ export const completion = internalAction({
             apiKey: process.env.OPENAI_API_KEY,
             compatibility: "strict",
           }); 
-
-        // console.log("Calling passed in userid", args.user_id);
-        // console.log("args.messages", args.messages);
 
         
           const { textStream } = streamText({
@@ -108,7 +110,7 @@ export const completion = internalAction({
                 execute: async(createEventParams) => {
                   console.log("Adding an event to your calendar");
 
-                  return ctx.runAction(internal.google.createGoogleCalendarEvent, {
+                  return ctx.runAction(api.google.createGoogleCalendarEvent, {
                     event: {...createEventParams 
                     },
                     userId: args.user_id
@@ -116,8 +118,21 @@ export const completion = internalAction({
                     
                 }
 
-              })
-            },
+              }),
+              listGoogleCalendarEvents: tool({
+                description: "Lists the user's Google Calendar events within a specified date range",
+                parameters: listEventsParams,
+                execute: async(listEventsParams) => {
+                  console.log("Listing Google Calendar events");
+                  return ctx.runAction(api.google.listGoogleCalendarEvents, {
+                    startDate: listEventsParams.startDate,
+                    endDate: listEventsParams.endDate,
+                    userId: args.user_id 
+                  });
+                }
+              }),
+            }
+            ,
             messages: [
                 {
                     role: "system",

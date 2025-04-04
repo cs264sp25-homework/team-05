@@ -1,8 +1,4 @@
-import { SignInButton, SignOutButton, UserButton } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
 import { useRouter } from "@/hooks/use-router";
-import GoogleCalendarEvents from "./components/testclerk";
 import HomePage from "@/pages/home-page";
 import NotFoundPage from "./pages/not-found-page";
 import Layout from "./components/layout";
@@ -11,7 +7,6 @@ import ListChatsPage from "./pages/chats/list-chats-page";
 import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
 import MessagesPage from "./pages/messages/messages-page";
-import { ClerkProvider } from '@clerk/clerk-react';
 
 
 function App() {
