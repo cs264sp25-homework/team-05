@@ -8,7 +8,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { EventDialog } from '@/components/EventDialog'
 import { Button } from './ui/button'
 import { EventDetailsDialog } from '@/components/EventDetailsDialog'
-import { useAuth } from '@clerk/clerk-react'
 
 export default function Calendar() {
   const { events, isLoading, error, addEvent, updateEvent, deleteEvent, loadEvents } = useGoogleCalendar()

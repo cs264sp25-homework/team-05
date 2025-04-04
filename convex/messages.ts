@@ -78,8 +78,6 @@ export const create = mutation({
       user_id: user_id,
     });
 
-    console.log("After the mutation ran!");
-
     return messageId;
   },
 });
