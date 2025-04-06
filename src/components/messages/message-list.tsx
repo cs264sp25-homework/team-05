@@ -4,6 +4,10 @@ import Loading from "@/components/loading";
 import Empty from "@/components/empty";
 import Message from "@/components/messages/message";
 import { cn } from "@/lib/utils";
+import FullCalendar from "@fullcalendar/react";
+import dayGridPlugin from '@fullcalendar/daygrid'
+import timeGridPlugin from '@fullcalendar/timegrid'
+import interactionPlugin from '@fullcalendar/interaction'
 
 interface MessageListProps {
   chatId: string;
@@ -112,6 +116,54 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
   if (loading) return <Loading />;
   if (error) return <Empty message="Error loading messages" />;
   if (messages.length === 0) return <Empty message="What can I help with?" />;
+
+  const latestMessageId = messages[messages.length - 1]._id;
+
+  let eventDetails = null;
+  let scrollTime = "12:00:00";
+  if (messages[messages.length - 1].content.includes('has been successfully created')) {
+    const titleMatch = messages[messages.length - 1].content.match(/"([^"]+)"/);
+    const dateMatch = messages[messages.length - 1].content.match(/for ([A-Za-z]+ \d+, \d{4})/);
+    const timeMatch = messages[messages.length - 1].content.match(/from (\d+:\d+ [AP]M) to (\d+:\d+ [AP]M)/);
+
+    console.log(messages[messages.length - 1].content);
+    // Extract the Google Calendar URL from the message content
+    const urlMatch = messages[messages.length - 1].content.match(/\[here\]\((https?:\/\/[^\s]+)\)/)?.[1];
+
+    console.log(urlMatch)
+
+    //console.log("URL Match:", urlMatch![0]);
+    
+    if (titleMatch && dateMatch && timeMatch) {
+      const title = titleMatch[1];
+      const startTime = timeMatch[1];
+      const endTime = timeMatch[2];
+      
+      const startDateTime = new Date(`${dateMatch[1]} ${startTime}`);
+
+      scrollTime = startTime;
+      console.log("this is the scorll time", startDateTime);
+
+      // extract the time from startDateTime
+      const startHours = startDateTime.getHours();
+      console.log("this is the start hours", startHours);
+
+      scrollTime = startHours.toString() + ":00:00";
+
+      const endDateTime = new Date(`${dateMatch[1]} ${endTime}`);
+
+      
+      
+      eventDetails = {
+        title,
+        start: startDateTime.toISOString(),
+        end: endDateTime.toISOString(),
+        url: urlMatch,
+      };
+    }
+  }
+
+
   
   return (
     <div
@@ -119,13 +171,39 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
       className={cn("h-full overflow-y-auto scroll-smooth")}
       onScroll={handleOnScroll}
     >
-      {messages.map((message) => (
-        <div key={message._id} data-message-id={message._id}>
-          <Message message={message} />
-        </div>
-      ))}
+      {messages.map((message) => {
+        // Parse event details if it's a calendar event message
+
+        return (
+          <div key={message._id} data-message-id={message._id}>
+            <Message message={message} />
+            {message._id === messages[messages.length - 1]._id && 
+             message.content.includes('calendar') && eventDetails && (
+              <div className="flex justify-center items-center w-full">
+                <div className="h-[500px] w-[600px]">
+                  <FullCalendar
+                    headerToolbar={{
+                      start: '',
+                      center: '',
+                      right: '',
+                    }}
+                    plugins={[timeGridPlugin]}
+                    initialView="timeGridDay"
+                    weekends={true}
+                    scrollTime={scrollTime}
+                    slotDuration="00:30:00"
+                    events={[eventDetails]}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };
 
 export default MessageList;
+
+
