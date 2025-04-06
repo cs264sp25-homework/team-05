@@ -4,6 +4,8 @@ import {createOpenAI, openai } from "@ai-sdk/openai";
 import { generateText, streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
+import { updateGoogleCalendarEvent } from "./google";
+import { update } from "./chats";
 
 // export const createEventParams = z.object({
 //   summary: z.string(),
@@ -31,6 +33,18 @@ export const listEventsParams = z.object({
 })
 
 export const removeEventParams = z.object({
+})
+
+export const updateEventParams = z.object({
+  summary: z.string().optional().describe("Like the title or name of the event"),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  start: z.object({
+    dateTime: z.string().describe("The start date must be in ISO format"),
+  }).optional(),
+  end: z.object({
+    dateTime: z.string().describe("The end date must be later than the start date and in ISO format"),
+  }).optional(),
 })
 
 export const getSingleEventParams = z.object({
@@ -140,6 +154,8 @@ export const completion = internalAction({
         You can also use the \`listGoogleCalendarEvents\` function to check for existing events in the user's calendar to avoid conflicts. As well as to suggest time slots for new events.
         If a user asks to remove an event or task from their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
         If they accept, call \'removeGoogleCalendarEvent\' to remove it from their calendar.
+        If a user asks to edit an event or task in their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
+        Then, call \'updateGoogleCalendarEvent\' to update the event.
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
         `;  
         const openai = createOpenAI({
@@ -187,6 +203,19 @@ export const completion = internalAction({
                     userId: args.user_id,
                     eventId: eventId
                   });
+                }
+              }),
+              updateGoogleCalendarEvent: tool({
+                description: "Updates a given event in a user's Google Calendar",
+                parameters: updateEventParams,
+                execute: async(updateEventParams) => {
+                  console.log("Updating Google Calendar event " + eventId);
+                  return ctx.runAction(api.google.updateGoogleCalendarEvent, {
+                    userId: args.user_id,
+                    eventId: eventId,
+                    event: {...updateEventParams 
+                    },
+                  })
                 }
               }),
               getSingleEvent: tool({
