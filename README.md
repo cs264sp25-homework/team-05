@@ -35,17 +35,23 @@ To use the application, log in using your Google account, giving the app permiss
 
 ## Developing
 
-Detailed and step-by-step documentation for setting up local development. For example, a new team member will use these instructions to start developing the project further. 
+Before developing, make sure that all necessary dependencies have been installed by running the following command:
 
 ```shell
-commands here
+pnpm install
 ```
 
-You should include what is needed (e.g. all of the configurations) to set up the dev environment. For instance, global dependencies or any other tools (include download links), explaining what database (and version) has been used, etc. If there is any virtual environment, local server, ..., explain here. 
+When developing locally, simply ensure that you run the following command in one terminal:
 
-Additionally, describe and show how to run the tests, explain your code style and show how to check it.
+```shell
+npx convex dev
+```
 
-If your project needs some additional steps for the developer to build the project after some code changes, state them here. Moreover, give instructions on how to build and release a new version. In case there's some step you have to take that publishes this project to a server, it must be stated here. 
+And in another terminal, ensure that you are running the following command:
+
+```shell
+pnpm run dev
+```
 
 ## Licensing
 
