@@ -5,8 +5,9 @@ import Empty from "@/components/empty";
 import Message from "@/components/messages/message";
 import { cn } from "@/lib/utils";
 
+
 interface MessageListProps {
-  chatId: string;
+  chatId: string,
 }
 
 const MessageList: React.FC<MessageListProps> = ({ chatId }) => {

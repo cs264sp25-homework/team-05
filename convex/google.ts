@@ -166,31 +166,42 @@ export const createGoogleCalendarEvent = action({
 
 export const updateGoogleCalendarEvent = action({
   args: {
+    userId: v.any(),
+    eventId: v.string(),
     event: v.object({
-      eventId: v.string(),
-      summary: v.string(),
+      summary: v.optional(v.string()),
       description: v.optional(v.string()),
-      start: v.object({
+      location: v.optional(v.string()),
+      start: v.optional(v.object({
         dateTime: v.string(),
-      }),
-      end: v.object({
+      })),
+      end: v.optional(v.object({
         dateTime: v.string(),
-      }),
+      })),
     })
   },
-  handler: async (ctx, args) => {
-    const token = await ctx.runAction(internal.google.getAccessToken);
+  handler: async (_, args) => {
+    let param_user_id = '';
+
+    if (typeof args.userId === 'string') {
+      param_user_id = args.userId; 
+    } else {
+      param_user_id = args.userId.subject;
+    }
+    const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+    const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
+
     client.setCredentials({
-      access_token: token,
-      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+      access_token: token.data[0].token,
     });
     
-    const response = await google.calendar("v3").events.update({
+    const response = await google.calendar("v3").events.patch({
       calendarId: "primary",
-      eventId: args.event.eventId,
+      eventId: args.eventId,
       requestBody: {
         summary: args.event.summary,
         description: args.event.description,
+        location: args.event.location,
         start: args.event.start,
         end: args.event.end,
       },
@@ -226,9 +237,6 @@ export const deleteGoogleCalendarEvent = action({
       eventId: args.eventId,
       auth: client,
     });
-
-    console.log("Response after deleting event: ", response);
-
-    return `The event was successfully deleted.`;
+    return response.data;
   }
 });

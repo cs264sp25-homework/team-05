@@ -106,8 +106,9 @@ export function useGoogleCalendar() {
     setError(null);
     try {
       const updatedGoogleEvent = await updateEventAction({
+        eventId: eventId,
+        userId: userId,
         event: {
-          eventId,
           summary: updatedEvent.title,
           start: {
             dateTime: updatedEvent.start,

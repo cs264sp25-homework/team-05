@@ -2,6 +2,7 @@ import { useStore } from "@nanostores/react";
 import { $router, Page, Params } from "@/store/router";
 import { getPagePath, openPage, redirectPage } from "@nanostores/router";
 
+
 // Custom hook to use the router
 export function useRouter() {
   const page = useStore($router); // Subscribing to the $router store to get the current page state
