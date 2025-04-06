@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAction, useConvexAuth } from 'convex/react';
 import { api } from "../../convex/_generated/api";
-import { googleCalendarService } from '@/services/googleCalendar';
 import { useAuth } from '@clerk/clerk-react';
 
 interface CalendarEvent {
@@ -147,7 +146,7 @@ export function useGoogleCalendar() {
     setIsLoading(true);
     setError(null);
     try {
-      await deleteEventAction({ eventId });
+      await deleteEventAction({ eventId, userId });
       setEvents(prev => prev.filter(event => event.id !== eventId));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete event'));

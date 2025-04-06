@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import {  internalAction, } from "./_generated/server";
-import {createOpenAI, openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
@@ -39,7 +39,7 @@ export const getSingleEventParams = z.object({
   message: z.string().describe("The user's query, e.g. 'the first event on April 8th'"),
 })
 
-type EventIdParams = z.infer<typeof getSingleEventParams>
+// type EventIdParams = z.infer<typeof getSingleEventParams>
 
 
 
@@ -73,7 +73,7 @@ export const findEvent = internalAction({
     events: v.array(v.any()),
     message: v.string(),
   },
-  handler: async(ctx, args) => {
+  handler: async(_, args) => {
     const instructions = `You are an expert at reading JSON objects to find relevant properties. You will be given a list of
     JSON objects corresponding to events from a user's calendar, as well as a query. Based on the query, determine the most
     relevant event, then respond with ONLY the id property of that event.`
@@ -181,7 +181,7 @@ export const completion = internalAction({
               removeGoogleCalendarEvent: tool({
                 description: "Removes a given event from a user's Google Calendar",
                 parameters: removeEventParams,
-                execute: async(removeEventParams) => {
+                execute: async() => {
                   console.log("Removing Google Calendar event " + eventId);
                   return ctx.runAction(api.google.deleteGoogleCalendarEvent, {
                     userId: args.user_id,

@@ -1,34 +1,33 @@
 
 import React, { useEffect, useState } from 'react';
-import { useAction, useConvexAuth } from 'convex/react';
-import { api } from "../../convex/_generated/api";
-import { calendar_v3 } from 'googleapis';
+import { useConvexAuth } from 'convex/react';
 
 const GoogleCalendarEvents: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [events, setEvents] = useState<any[]>([]);
-  const [code, setCode] = useState<string>("");
+  const [events] = useState<any[]>([]);
+  // const [code, setCode] = useState<string>("");
 
-  const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
-  const jwtAccessToken = "";
+  //const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
+  // const jwtAccessToken = "";
+  // setCode(jwtAccessToken);
 
   const { isAuthenticated } = useConvexAuth();
 
   useEffect(() => {
     
 
-    const fetchData = async () => {
-      if (isAuthenticated) {
-        const functionEvents = await fetchEvents({
-          accessToken: jwtAccessToken,
-          code: code,
-        });
+    // const fetchData = async () => {
+    //   if (isAuthenticated) {
+    //     const functionEvents = await fetchEvents({
+    //       accessToken: jwtAccessToken,
+    //       code: code,
+    //     });
         
-        setEvents(functionEvents as calendar_v3.Schema$Event[]);
-      }
-    };
+    //     setEvents(functionEvents as calendar_v3.Schema$Event[]);
+    //   }
+    // };
   
-    fetchData();
+    // fetchData();
   }, [isAuthenticated]);  
   
 

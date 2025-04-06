@@ -1,5 +1,5 @@
 import { useStore } from "@nanostores/react";
-import { $router, Page } from "@/store/router";
+import { $router, Page, Params } from "@/store/router";
 import { getPagePath, openPage, redirectPage } from "@nanostores/router";
 
 // Custom hook to use the router

@@ -32,7 +32,7 @@ export const getAccessTokenWithUserId = internalAction({
   args: {
     userId: v.any(), 
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     let param_user_id = '';
 
     if (typeof args.userId === 'string') {
@@ -115,7 +115,7 @@ export const createGoogleCalendarEvent = action({
     }),
     userId: v.any(),
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     console.log("Creating event!");
 
     console.log("This is the new user_id", args.userId);
@@ -206,7 +206,7 @@ export const deleteGoogleCalendarEvent = action({
     eventId: v.string(),
     userId: v.any(),
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     let param_user_id = '';
 
     if (typeof args.userId === 'string') {
@@ -226,6 +226,8 @@ export const deleteGoogleCalendarEvent = action({
       eventId: args.eventId,
       auth: client,
     });
+
+    console.log("Response after deleting event: ", response);
 
     return `The event was successfully deleted.`;
   }
