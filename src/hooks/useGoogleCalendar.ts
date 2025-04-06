@@ -147,7 +147,7 @@ export function useGoogleCalendar() {
     setIsLoading(true);
     setError(null);
     try {
-      await deleteEventAction({ userId, eventId });
+      await deleteEventAction({ eventId, userId });
       setEvents(prev => prev.filter(event => event.id !== eventId));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to delete event'));

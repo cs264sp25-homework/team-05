@@ -1,4 +1,3 @@
-
 // interface GoogleCalendarEvent {
 //   id: string;
 //   summary: string;

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import {  internalAction, } from "./_generated/server";
-import {createOpenAI, } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import { generateText, streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
@@ -50,6 +50,9 @@ export const getSingleEventParams = z.object({
   endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
   message: z.string().describe("The user's query, e.g. 'the first event on April 8th'"),
 })
+
+// type EventIdParams = z.infer<typeof getSingleEventParams>
+
 
 
 

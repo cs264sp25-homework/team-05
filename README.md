@@ -4,25 +4,38 @@ Name of the application goes here -- followed by a brief description (elevator p
 
 ## Installing / Getting started
 
-A quick introduction of the minimal setup you need to get the app up & running on a local computer. For example, your advisor might use the instruction here to run the application locally.
+To access the deployed application, visit http://cs264sp25-homework.github.io/team-05/
 
-```shell
-commands here
-```
+To use the application, log in using your Google account, giving the app permission to view and edit calendar events. To interact with the chat interface, use the button on the top left of the screen.
 
 ## Developing
 
-Detailed and step-by-step documentation for setting up local development. For example, a new team member will use these instructions to start developing the project further. 
+Before developing, make sure that all necessary dependencies have been installed by running the following command:
 
 ```shell
-commands here
+pnpm install
 ```
 
-You should include what is needed (e.g. all of the configurations) to set up the dev environment. For instance, global dependencies or any other tools (include download links), explaining what database (and version) has been used, etc. If there is any virtual environment, local server, ..., explain here. 
+When developing locally, simply ensure that you run the following command in one terminal:
 
-Additionally, describe and show how to run the tests, explain your code style and show how to check it.
+```shell
+npx convex dev
+```
 
-If your project needs some additional steps for the developer to build the project after some code changes, state them here. Moreover, give instructions on how to build and release a new version. In case there's some step you have to take that publishes this project to a server, it must be stated here. 
+In another terminal, the appropriate environment variables. Replace YOUR_API_KEY_HERE with your OpenAI API key.
+
+```shell
+npx convex env set GOOGLE_OAUTH_REDIRECT_URI=“https://suitable-cobra-84.clerk.accounts.dev/v1/oauth_callback”
+npx convex env set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_c3VpdGFibGUtY29icmEtODQuY2xlcmsuYWNjb3VudHMuZGV2JA
+npx convex env set CLERK_SECRET_KEY=sk_test_P0Ee1F2XwswNkDQWu1JNxyrT6wdler3u4catiPOwSU
+npx convex env set OPENAI_API_KEY=YOUR_API_KEY_HERE
+```
+
+Then in the other terminal, ensure that you are running the following command:
+
+```shell
+pnpm run dev
+```
 
 ## Licensing
 
