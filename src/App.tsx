@@ -1,32 +1,82 @@
-import { cn } from "@/lib/utils";
-import SignInWithGoogle from "./components/SignInWithGoogle";
-const DEBUG = false;
+import { useRouter } from "@/hooks/use-router";
+import HomePage from "@/pages/home-page";
+import NotFoundPage from "./pages/not-found-page";
+import Layout from "./components/layout";
+import Empty from "./components/empty";
+import ListChatsPage from "./pages/chats/list-chats-page";
+import AddChatPage from "./pages/chats/add-chat-page";
+import EditChatPage from "./pages/chats/edit-chat-page";
+import MessagesPage from "./pages/messages/messages-page";
+import Calendar from "./components/Calendar";
+
 
 function App() {
-  
+  const { currentRoute, params } = useRouter();
+  console.log(currentRoute);
+
+  if (!currentRoute) {
+    return <NotFoundPage />;
+  }
+
+
+  if (currentRoute === "home") {
+    return <HomePage />;
+  }
+  const renderContent = () => {
+    switch(currentRoute) {
+      case "chats":
+        return {
+          left: <ListChatsPage />,
+          middle: <Empty message="Select a chat to view its messages." />,
+          right: null,
+        }
+      case "addChat":
+        return {
+          left: <ListChatsPage />,
+          middle: <AddChatPage />,
+          right: <Calendar />,
+        };
+      case "editChat":
+        return {
+          left: <ListChatsPage />,
+          middle: <EditChatPage chatId={params.chatId as string} />,
+          right: null,
+        };
+      case "messages":
+        return {
+          left: <ListChatsPage />,
+          middle: <MessagesPage chatId={params.chatId as string} />,
+          right: <Calendar />,
+        };
+      default:
+        return {
+          left: null,
+          middle: <Empty message="Page not found" />,
+          right: null,
+        };
+    }
+  }
+
+  const { left, middle, right } = renderContent();
+
   return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center h-screen gap-5",
-        {
-          "border-2 border-red-500": DEBUG,
-        },
-      )}
-    >
-      <div
-        className={cn(
-          "flex items-center justify-start font-semibold text-xl3",
-          {
-            "border-2 border-blue-500": DEBUG,
-          },
-        )}
-      >
-      </div>
-      <div className="max-w-md">
-        <SignInWithGoogle />
-      </div>
-    </div>
-  )
+      <Layout
+        leftPanelContent={left}
+        middlePanelContent={middle}
+        rightPanelContent={right}
+        className="h-screen"
+      />
+  );
 }
 
-export default App
+
+// https://www.googleapis.com/auth/calendar.readonly
+
+
+
+
+// function Content() {
+//   return <div>Authenticated content</div>;
+// }
+
+export default App;
