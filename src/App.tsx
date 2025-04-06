@@ -7,6 +7,7 @@ import ListChatsPage from "./pages/chats/list-chats-page";
 import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
 import MessagesPage from "./pages/messages/messages-page";
+import Calendar from "./components/Calendar";
 
 
 function App() {
@@ -33,7 +34,7 @@ function App() {
         return {
           left: <ListChatsPage />,
           middle: <AddChatPage />,
-          right: null,
+          right: <Calendar />,
         };
       case "editChat":
         return {
@@ -45,7 +46,7 @@ function App() {
         return {
           left: <ListChatsPage />,
           middle: <MessagesPage chatId={params.chatId as string} />,
-          right: null,
+          right: <Calendar />,
         };
       default:
         return {

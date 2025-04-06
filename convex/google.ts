@@ -204,20 +204,29 @@ export const updateGoogleCalendarEvent = action({
 export const deleteGoogleCalendarEvent = action({
   args: {
     eventId: v.string(),
+    userId: v.any(),
   },
   handler: async (ctx, args) => {
-    const token = await ctx.runAction(internal.google.getAccessToken);
+    let param_user_id = '';
+
+    if (typeof args.userId === 'string') {
+      param_user_id = args.userId; 
+    } else {
+      param_user_id = args.userId.subject;
+    }
+    const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+    const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
+
     client.setCredentials({
-      access_token: token,
-      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+      access_token: token.data[0].token,
     });
     
-    await google.calendar("v3").events.delete({
+    const response = await google.calendar("v3").events.delete({
       calendarId: "primary",
       eventId: args.eventId,
       auth: client,
     });
 
-    return true;
+    return `The event was successfully deleted.`;
   }
 });

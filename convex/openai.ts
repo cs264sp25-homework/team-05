@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import {  internalAction, } from "./_generated/server";
 import {createOpenAI, openai } from "@ai-sdk/openai";
-import { streamText, tool} from "ai";
+import { generateText, streamText, tool} from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
 
@@ -10,6 +10,8 @@ import { z } from "zod";
 //   startDate: z.string().date().describe("Has to be formatted as follows: '2025-04-04T11:02:00.000Z'"),
 //   endDate: z.string().date().describe("Has to be formatted as follows: '2025-04-04T11:02:00.000Z'")
 // })
+
+let eventId = ""; //the event ID of the event
 
 export const createEventParams = z.object({
   summary: z.string().describe("Like the title or name of the event" ),
@@ -28,7 +30,16 @@ export const listEventsParams = z.object({
   endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
 })
 
+export const removeEventParams = z.object({
+})
 
+export const getSingleEventParams = z.object({
+  startDate: z.string().describe("The start date in ISO format (e.g., '2025-04-04T00:00:00.000Z')"),
+  endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
+  message: z.string().describe("The user's query, e.g. 'the first event on April 8th'"),
+})
+
+type EventIdParams = z.infer<typeof getSingleEventParams>
 
 
 
@@ -56,6 +67,41 @@ export const listEventsParams = z.object({
 //     return user_id;
 //   }
 // })
+
+export const findEvent = internalAction({
+  args:{
+    events: v.array(v.any()),
+    message: v.string(),
+  },
+  handler: async(ctx, args) => {
+    const instructions = `You are an expert at reading JSON objects to find relevant properties. You will be given a list of
+    JSON objects corresponding to events from a user's calendar, as well as a query. Based on the query, determine the most
+    relevant event, then respond with ONLY the id property of that event.`
+
+    const openai = createOpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      compatibility: "strict",
+    }); 
+    const response = await generateText({
+      model: openai('gpt-4o'),
+      messages: [
+        {
+            role: "system",
+            content: instructions,
+        },
+        {
+            role: "system",
+            content: args.message,
+        },
+        {
+            role: "system",
+            content: JSON.stringify(args.events),
+        }
+      ]
+    })
+    return response.text;
+  }
+})
 
 
 export const completion = internalAction({
@@ -92,16 +138,17 @@ export const completion = internalAction({
         endDate: <endDate>
         and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
         You can also use the \`listGoogleCalendarEvents\` function to check for existing events in the user's calendar to avoid conflicts. As well as to suggest time slots for new events.
+        If a user asks to remove an event or task from their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
+        If they accept, call \'removeGoogleCalendarEvent\' to remove it from their calendar.
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
         `;  
-        
         const openai = createOpenAI({
             apiKey: process.env.OPENAI_API_KEY,
             compatibility: "strict",
           }); 
 
-        
-          const { textStream } = streamText({
+        try {
+          const { textStream } = await streamText({
             model: openai('gpt-4o'),
             tools: {
               createGoogleCalendarEvent: tool({
@@ -129,6 +176,35 @@ export const completion = internalAction({
                     endDate: listEventsParams.endDate,
                     userId: args.user_id 
                   });
+                }
+              }),
+              removeGoogleCalendarEvent: tool({
+                description: "Removes a given event from a user's Google Calendar",
+                parameters: removeEventParams,
+                execute: async(removeEventParams) => {
+                  console.log("Removing Google Calendar event " + eventId);
+                  return ctx.runAction(api.google.deleteGoogleCalendarEvent, {
+                    userId: args.user_id,
+                    eventId: eventId
+                  });
+                }
+              }),
+              getSingleEvent: tool({
+                description: "Retrieves the ID of the most relevant event and stores it",
+                parameters: getSingleEventParams,
+                execute: async(getSingleEventParams) => {
+                  const events = await ctx.runAction(api.google.listGoogleCalendarEvents, {
+                    startDate: getSingleEventParams.startDate,
+                    endDate: getSingleEventParams.endDate,
+                    userId: args.user_id
+                  })
+                  const response = ctx.runAction(internal.openai.findEvent, {
+                     events: events,
+                     message: getSingleEventParams.message,
+                  });
+                  eventId = await response;
+                  console.log(eventId);
+                  return events;
                 }
               }),
             }
@@ -171,6 +247,10 @@ export const completion = internalAction({
             content: fullResponse,
           });
         }
+      }
+      catch (error) {
+        console.log(error);
+      }
     },
 })
 
