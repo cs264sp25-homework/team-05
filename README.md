@@ -1,6 +1,6 @@
 # PGAi Team Project
 
-Name of the application goes here -- followed by a brief description (elevator pitch) of the application.
+Calendula - Our application uses AI to make calendars a lot easier to manage. You can just talk to it by simply asking to add, change, find, or delete events using natural language, no forms or clicking around needed! You can even check when someone else is free by "talking to their schedule," so you skip the back-and-forth emails or Slack messages and find a time that works, fast.
 
 ## Installing / Getting started
 
