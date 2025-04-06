@@ -4,32 +4,7 @@ Name of the application goes here -- followed by a brief description (elevator p
 
 ## Installing / Getting started
 
-In order to run the application locally, use two terminals. In one, navigate to the root folder and install the frontend dependencies:
-
-```shell
-pnpm install
-```
-
-Then run the frontend:
-
-```shell
-pnpm install
-```
-
-In the other, navigate to the root folder and setup the Convex environment, then set the appropriate environment variables. Replace YOUR_API_KEY_HERE with your OpenAI API key.
-
-```shell
-npx convex dev
-npx convex env set GOOGLE_OAUTH_REDIRECT_URI=“https://suitable-cobra-84.clerk.accounts.dev/v1/oauth_callback”
-npx convex env set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_c3VpdGFibGUtY29icmEtODQuY2xlcmsuYWNjb3VudHMuZGV2JA
-npx convex env set CLERK_SECRET_KEY=sk_test_P0Ee1F2XwswNkDQWu1JNxyrT6wdler3u4catiPOwSU
-npx convex env set OPENAI_API_KEY=YOUR_API_KEY_HERE
-```
-Then run the backend:
-
-```shell
-npx convex dev
-```
+To access the deployed application, visit http://cs264sp25-homework.github.io/team-05/
 
 To use the application, log in using your Google account, giving the app permission to view and edit calendar events. To interact with the chat interface, use the button on the top left of the screen.
 
@@ -47,7 +22,16 @@ When developing locally, simply ensure that you run the following command in one
 npx convex dev
 ```
 
-And in another terminal, ensure that you are running the following command:
+In another terminal, the appropriate environment variables. Replace YOUR_API_KEY_HERE with your OpenAI API key.
+
+```shell
+npx convex env set GOOGLE_OAUTH_REDIRECT_URI=“https://suitable-cobra-84.clerk.accounts.dev/v1/oauth_callback”
+npx convex env set NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_c3VpdGFibGUtY29icmEtODQuY2xlcmsuYWNjb3VudHMuZGV2JA
+npx convex env set CLERK_SECRET_KEY=sk_test_P0Ee1F2XwswNkDQWu1JNxyrT6wdler3u4catiPOwSU
+npx convex env set OPENAI_API_KEY=YOUR_API_KEY_HERE
+```
+
+Then in the other terminal, ensure that you are running the following command:
 
 ```shell
 pnpm run dev
