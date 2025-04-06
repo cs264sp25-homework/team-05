@@ -1,20 +1,18 @@
-import { api } from "../../convex/_generated/api";
-import { useAction } from "convex/react";
 
-interface GoogleCalendarEvent {
-  id: string;
-  summary: string;
-  start: {
-    dateTime?: string;
-    date?: string;
-    timeZone?: string;
-  };
-  end: {
-    dateTime?: string;
-    date?: string;
-    timeZone?: string;
-  };
-}
+// interface GoogleCalendarEvent {
+//   id: string;
+//   summary: string;
+//   start: {
+//     dateTime?: string;
+//     date?: string;
+//     timeZone?: string;
+//   };
+//   end: {
+//     dateTime?: string;
+//     date?: string;
+//     timeZone?: string;
+//   };
+// }
 
 interface CalendarEvent {
   id: string;

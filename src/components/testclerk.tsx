@@ -7,7 +7,7 @@ import { calendar_v3 } from 'googleapis';
 const GoogleCalendarEvents: React.FC = () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [events, setEvents] = useState<any[]>([]);
-  const [code, setCode] = useState<string>("");
+
 
   const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
   const jwtAccessToken = "";
@@ -20,8 +20,9 @@ const GoogleCalendarEvents: React.FC = () => {
     const fetchData = async () => {
       if (isAuthenticated) {
         const functionEvents = await fetchEvents({
-          accessToken: jwtAccessToken,
-          code: code,
+          userId: jwtAccessToken,
+          startDate: "",
+          endDate: "",
         });
         
         setEvents(functionEvents as calendar_v3.Schema$Event[]);

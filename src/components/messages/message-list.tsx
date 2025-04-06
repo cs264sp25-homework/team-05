@@ -5,8 +5,9 @@ import Empty from "@/components/empty";
 import Message from "@/components/messages/message";
 import { cn } from "@/lib/utils";
 
+
 interface MessageListProps {
-  chatId: string;
+  chatId: string,
 }
 
 const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
@@ -15,7 +16,7 @@ const MessageList: React.FC<MessageListProps> = ({ chatId }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const scrollTopValue = useRef(0);
   const isUserScrolling = useRef(false);
-  const scrollTimeout = useRef<NodeJS.Timeout>();
+  const scrollTimeout = useRef<NodeJS.Timeout>(null);
   const [scrollDirection, setScrollDirection] = useState<"down" | "up" | null>(
     null,
   );

@@ -11,7 +11,6 @@ export const chatSchema = createChatSchema.extend({
   _id: z.string(),
   _creationTime: z.number(),
   messageCount: z.number(),
-  fileCount: z.number(),
 });
 
 export type CreateChatType = z.infer<typeof createChatSchema>;

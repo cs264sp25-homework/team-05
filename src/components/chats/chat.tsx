@@ -18,7 +18,6 @@ const Chat: React.FC<Partial<ChatType>> = ({
   title,
   description,
   messageCount = 0,
-  fileCount = 0,
 }) => {
   const { navigate } = useRouter();
 
@@ -46,14 +45,6 @@ const Chat: React.FC<Partial<ChatType>> = ({
               })}
             >
               {"/"}
-            </div>
-            <div
-              className={cn("p-1 text-muted-foreground font-light text-sm", {
-                "border-2 border-blue-500": DEBUG,
-              })}
-            >
-              {fileCount}
-              {fileCount == 1 ? " file" : " files"}
             </div>
           </div>
           <div
