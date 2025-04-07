@@ -116,9 +116,7 @@ export const createGoogleCalendarEvent = action({
     userId: v.any(),
   },
   handler: async (_, args) => {
-    console.log("Creating event!");
-
-    console.log("This is the new user_id", args.userId);
+  
 
     let param_user_id = '';
 
@@ -132,12 +130,8 @@ export const createGoogleCalendarEvent = action({
     // const token = await ctx.runAction(internal.google.getAccessToken);
 
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
-    console.log("This is the real ting", args.userId.subject);
     const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
 
-    console.log("Got the token!!!");
-
-    console.log("This is the event that was sent in", args.event);
 
 
 
@@ -146,7 +140,6 @@ export const createGoogleCalendarEvent = action({
       access_token: token.data[0].token,
     });
 
-    console.log("Token: ", token);
 
     args.event.start.dateTime = new Date(args.event.start.dateTime).toISOString(); // Ensure the start date is in ISO format
     args.event.end.dateTime = new Date(args.event.end.dateTime).toISOString(); // Ensure the end date is in ISO format
@@ -158,7 +151,6 @@ export const createGoogleCalendarEvent = action({
       auth: client,
     });
 
-    console.log("Got the response data: ", response.data);
 
     return response.data;
   }

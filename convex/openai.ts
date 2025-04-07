@@ -111,7 +111,6 @@ export const findEvent = internalAction({
         }
       ]
     })
-    console.log(`Found ${response.text}`)
     return response.text;
   }
 })
@@ -143,18 +142,18 @@ export const completion = internalAction({
         - If a user asks you to offer a suggestion on how to fix a conflict (two events at the same time), use your own judgement to determine which task should be moved
         3. Offer good scheduling practices
         - Whenever a user asks you for suggestions, make sure to offer advice on how they can get better at scheduling
-         When providing a way to schedule tasks, present the tasks in this format:
+        When scheduling tasks, present the tasks in this format:
         summary: <summary>
         description: <description>
         location: <location>
         startDate: <startDate>
         endDate: <endDate>
-        and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
+        and then ask the user to confirm the details before you schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
         You can also use the \`listGoogleCalendarEvents\` function to check for existing events in the user's calendar to avoid conflicts. As well as to suggest time slots for new events.
-        If a user asks to remove an event or task from their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
-        If they accept, call \'removeGoogleCalendarEvent\' to remove it from their calendar.
-        If a user asks to edit an event or task in their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
-        Then, call \'updateGoogleCalendarEvent\' to update the event.
+        If a user asks to remove an event or task from their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
+        If they accept, call \`removeGoogleCalendarEvent\` to remove it from their calendar.
+        If a user asks to edit an event or task in their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
+        Then, call \`updateGoogleCalendarEvent\` to update the event.
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
         `;  
         const openai = createOpenAI({
@@ -170,7 +169,6 @@ export const completion = internalAction({
                 description: "Creates and adds an event to the user's calendar",
                 parameters: createEventParams,
                 execute: async(createEventParams) => {
-                  console.log("Adding an event to your calendar");
 
                   return ctx.runAction(api.google.createGoogleCalendarEvent, {
                     event: {...createEventParams 
@@ -185,7 +183,6 @@ export const completion = internalAction({
                 description: "Lists the user's Google Calendar events within a specified date range",
                 parameters: listEventsParams,
                 execute: async(listEventsParams) => {
-                  console.log("Listing Google Calendar events");
                   return ctx.runAction(api.google.listGoogleCalendarEvents, {
                     startDate: listEventsParams.startDate,
                     endDate: listEventsParams.endDate,
@@ -197,12 +194,10 @@ export const completion = internalAction({
                 description: "Removes a given event from a user's Google Calendar",
                 parameters: removeEventParams,
                 execute: async(_) => {
-                  console.log("Removing Google Calendar event " + eventId);
-                  const response = await ctx.runAction(api.google.deleteGoogleCalendarEvent, {
+                  await ctx.runAction(api.google.deleteGoogleCalendarEvent, {
                     userId: args.user_id,
                     eventId: eventId
                   });
-                  console.log(response);
                   return "The event was successfuly deleted."
                   
                 }
@@ -211,14 +206,12 @@ export const completion = internalAction({
                 description: "Updates a given event in a user's Google Calendar",
                 parameters: updateEventParams,
                 execute: async(updateEventParams) => {
-                  console.log("Updating Google Calendar event " + eventId);
-                  const response = await ctx.runAction(api.google.updateGoogleCalendarEvent, {
+                  await ctx.runAction(api.google.updateGoogleCalendarEvent, {
                     userId: args.user_id,
                     eventId: eventId,
                     event: {...updateEventParams 
                     },
                   })
-                  console.log(response)
                   return "The event was successfully updated."
                 }
               }),
@@ -236,7 +229,6 @@ export const completion = internalAction({
                      message: getSingleEventParams.message,
                   });
                   eventId = response;
-                  console.log(eventId);
                   return events;
                 }
               }),
@@ -251,17 +243,6 @@ export const completion = internalAction({
             ],
             maxSteps: 10,
             temperature: 0,
-            onStepFinish: ({ 
-              text, 
-              toolCalls, 
-              toolResults,
-              request
-            }) => {
-              console.log("Text", text);
-              console.log("Tool calls:", toolCalls);
-              console.log("Tool results:", toolResults);
-              console.log("Request", request.body);
-            },
           });
 
         let fullResponse = "";
