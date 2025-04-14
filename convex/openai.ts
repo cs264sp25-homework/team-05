@@ -11,7 +11,7 @@ import { z } from "zod";
 //   endDate: z.string().date().describe("Has to be formatted as follows: '2025-04-04T11:02:00.000Z'")
 // })
 
-let eventId = ""; //the event ID of the event
+let eventId = ""; //the event ID of the event found by findEvent
 
 export const createEventParams = z.object({
   summary: z.string().describe("Like the title or name of the event" ),
@@ -31,6 +31,18 @@ export const listEventsParams = z.object({
 })
 
 export const removeEventParams = z.object({
+})
+
+export const updateEventParams = z.object({
+  summary: z.string().optional().describe("Like the title or name of the event"),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  start: z.object({
+    dateTime: z.string().describe("The start date must be in ISO format"),
+  }).optional(),
+  end: z.object({
+    dateTime: z.string().describe("The end date must be later than the start date and in ISO format"),
+  }).optional(),
 })
 
 export const getSingleEventParams = z.object({
@@ -130,16 +142,18 @@ export const completion = internalAction({
         - If a user asks you to offer a suggestion on how to fix a conflict (two events at the same time), use your own judgement to determine which task should be moved
         3. Offer good scheduling practices
         - Whenever a user asks you for suggestions, make sure to offer advice on how they can get better at scheduling
-         When providing a way to schedule tasks, present the tasks in this format:
+        When scheduling tasks, present the tasks in this format:
         summary: <summary>
         description: <description>
         location: <location>
         startDate: <startDate>
         endDate: <endDate>
-        and then ask the user if you would like to schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
+        and then ask the user to confirm the details before you schedule the tasks for them. If they say yes, use the \`createGoogleCalendarEvent\` function to schedule the tasks.
         You can also use the \`listGoogleCalendarEvents\` function to check for existing events in the user's calendar to avoid conflicts. As well as to suggest time slots for new events.
-        If a user asks to remove an event or task from their calendar, use \'getSingleEvent\' to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
-        If they accept, call \'removeGoogleCalendarEvent\' to remove it from their calendar.
+        If a user asks to remove an event or task from their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, and finally ask the user if they'd like to delete this event.
+        If they accept, call \`removeGoogleCalendarEvent\` to remove it from their calendar.
+        If a user asks to edit an event or task in their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
+        Then, call \`updateGoogleCalendarEvent\` to update the event.
         Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
         `;  
         const openai = createOpenAI({
@@ -155,7 +169,6 @@ export const completion = internalAction({
                 description: "Creates and adds an event to the user's calendar",
                 parameters: createEventParams,
                 execute: async(createEventParams) => {
-                  console.log("Adding an event to your calendar");
 
                   return ctx.runAction(api.google.createGoogleCalendarEvent, {
                     event: {...createEventParams 
@@ -170,7 +183,6 @@ export const completion = internalAction({
                 description: "Lists the user's Google Calendar events within a specified date range",
                 parameters: listEventsParams,
                 execute: async(listEventsParams) => {
-                  console.log("Listing Google Calendar events");
                   return ctx.runAction(api.google.listGoogleCalendarEvents, {
                     startDate: listEventsParams.startDate,
                     endDate: listEventsParams.endDate,
@@ -181,12 +193,26 @@ export const completion = internalAction({
               removeGoogleCalendarEvent: tool({
                 description: "Removes a given event from a user's Google Calendar",
                 parameters: removeEventParams,
-                execute: async() => {
-                  console.log("Removing Google Calendar event " + eventId);
-                  return ctx.runAction(api.google.deleteGoogleCalendarEvent, {
+                execute: async(_) => {
+                  await ctx.runAction(api.google.deleteGoogleCalendarEvent, {
                     userId: args.user_id,
                     eventId: eventId
                   });
+                  return "The event was successfuly deleted."
+                  
+                }
+              }),
+              updateGoogleCalendarEvent: tool({
+                description: "Updates a given event in a user's Google Calendar",
+                parameters: updateEventParams,
+                execute: async(updateEventParams) => {
+                  await ctx.runAction(api.google.updateGoogleCalendarEvent, {
+                    userId: args.user_id,
+                    eventId: eventId,
+                    event: {...updateEventParams 
+                    },
+                  })
+                  return "The event was successfully updated."
                 }
               }),
               getSingleEvent: tool({
@@ -198,12 +224,11 @@ export const completion = internalAction({
                     endDate: getSingleEventParams.endDate,
                     userId: args.user_id
                   })
-                  const response = ctx.runAction(internal.openai.findEvent, {
+                  const response = await ctx.runAction(internal.openai.findEvent, {
                      events: events,
                      message: getSingleEventParams.message,
                   });
-                  eventId = await response;
-                  console.log(eventId);
+                  eventId = response;
                   return events;
                 }
               }),
@@ -218,17 +243,6 @@ export const completion = internalAction({
             ],
             maxSteps: 10,
             temperature: 0,
-            onStepFinish: ({ 
-              text, 
-              toolCalls, 
-              toolResults,
-              request
-            }) => {
-              console.log("Text", text);
-              console.log("Tool calls:", toolCalls);
-              console.log("Tool results:", toolResults);
-              console.log("Request", request.body);
-            },
           });
 
         let fullResponse = "";
