@@ -51,6 +51,7 @@ const GroupDetailsDialog = ({
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+  const [isLeaveGroupAlertOpen, setIsLeaveGroupAlertOpen] = useState(false);
   
   // First get basic member info
   const groupMembersResult = useQuery(api.groups.getGroupMembers, 
@@ -86,6 +87,7 @@ const GroupDetailsDialog = ({
 
   const removeMember = useMutation(api.groups.removeMember);
   const deleteGroup = useMutation(api.groups.deleteGroup);
+  const leaveGroup = useMutation(api.groups.leaveGroup);
 
   const handleRemoveMember = async (userId: string) => {
     if (!groupId) return;
@@ -114,6 +116,22 @@ const GroupDetailsDialog = ({
       }, 500);
     } catch (error: any) {
       toast.error(error.message || "Failed to delete group");
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!groupId) return;
+    
+    try {
+      await leaveGroup({ groupId });
+      toast.success("You have left the group");
+      onOpenChange(false);
+      // Reload the page after a short delay to update the UI
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to leave the group");
     }
   };
 
@@ -230,8 +248,8 @@ const GroupDetailsDialog = ({
             )}
           </div>
 
-          {isAdmin && (
-            <DialogFooter>
+          <DialogFooter>
+            {isAdmin ? (
               <Button
                 variant="destructive"
                 onClick={() => setIsDeleteAlertOpen(true)}
@@ -240,8 +258,17 @@ const GroupDetailsDialog = ({
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete Group
               </Button>
-            </DialogFooter>
-          )}
+            ) : (
+              <Button
+                variant="outline"
+                onClick={() => setIsLeaveGroupAlertOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                <UserMinus className="w-4 h-4 mr-2" />
+                Leave Group
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -264,6 +291,30 @@ const GroupDetailsDialog = ({
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert dialog for leaving group */}
+      <AlertDialog
+        open={isLeaveGroupAlertOpen}
+        onOpenChange={setIsLeaveGroupAlertOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to leave this group? You will need a new invitation to rejoin.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeaveGroup}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              Leave
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

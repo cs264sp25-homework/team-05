@@ -397,4 +397,49 @@ export const deleteGroup = mutation({
 
     return true;
   },
+});
+
+// Allow a user to leave a group
+export const leaveGroup = mutation({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+
+    // Check if the user is in the group
+    const membership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", userId)
+      )
+      .first();
+
+    if (!membership) {
+      throw new Error("You are not a member of this group");
+    }
+
+    // Check if the user is the last admin
+    if (membership.role === "admin") {
+      const admins = await ctx.db
+        .query("groupMembers")
+        .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+        .filter((q) => q.eq(q.field("role"), "admin"))
+        .collect();
+      
+      if (admins.length <= 1) {
+        throw new Error("You are the last admin. Please appoint another admin or delete the group.");
+      }
+    }
+
+    // Remove the user from the group
+    await ctx.db.delete(membership._id);
+
+    return true;
+  },
 }); 
