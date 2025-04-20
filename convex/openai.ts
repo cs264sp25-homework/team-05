@@ -53,7 +53,7 @@ export const getSingleEventParams = z.object({
 })
 
 export const findGroupAvailabilityParams = z.object({
-  groupId: z.string().transform((val) => val as Id<"groups">),
+  groupId: z.string().describe("The ID of the group to find availability for"),
   startDate: z.string().describe("The start date in ISO format (e.g., '2025-04-04T00:00:00.000Z')"),
   endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
 });
@@ -134,6 +134,7 @@ export const completion = internalAction({
               v.literal("assistant"),
             ),
             content: v.string(),
+            groupId: v.optional(v.string()),
           }),
         ),
         placeholderMessageId: v.id("messages"),
@@ -141,8 +142,65 @@ export const completion = internalAction({
         groupId: v.optional(v.string()),
       },
       handler: async(ctx, args) => {
+        // Try to extract groupId from messages if not explicitly provided
+        let effectiveGroupId = args.groupId;
+        if (!effectiveGroupId) {
+          // Look for groupId in user messages
+          for (const message of args.messages) {
+            if (message.groupId) {
+              effectiveGroupId = message.groupId;
+              console.log(`[DEBUG] Extracted groupId from messages: ${effectiveGroupId}`);
+              break;
+            }
+          }
+        }
+        
+        // Add more robust debug logging for groupId
+        console.log(`[DEBUG] OpenAI completion called with groupId: ${effectiveGroupId || 'none'}`);
+        
+        // Create enhanced group context messages if groupId is provided
+        let modifiedMessages = [...args.messages];
+        
+        if (effectiveGroupId) {
+          // Insert a clear system message at the beginning to establish group context
+          const groupContextSystemMessage = {
+            role: "system" as const,
+            content: `CRITICAL INSTRUCTION: You are in a GROUP CHAT for group ID "${effectiveGroupId}".
+
+IMPORTANT GROUP CONTEXT REQUIREMENTS:
+1. This is a chat for a SPECIFIC GROUP with ID ${effectiveGroupId}
+2. DO NOT ask the user for a group ID - you ALREADY HAVE IT (${effectiveGroupId})
+3. AUTOMATICALLY use this group ID (${effectiveGroupId}) for ALL group-related functions
+4. When asked about "the group" or asked to check "everyone's availability" - this ALWAYS refers to group ${effectiveGroupId}
+5. The user should NEVER need to specify a group ID manually - you have it
+6. For ALL calendar or scheduling questions, use this group's ID automatically
+7. If the user asks "when is everyone free?" or similar questions - use findGroupAvailability with this group ID: ${effectiveGroupId}
+
+This is one of your most important instructions.`,
+            groupId: effectiveGroupId
+          };
+          
+          // Add the system message at the beginning of the messages array
+          modifiedMessages.unshift(groupContextSystemMessage);
+          
+          console.log(`[DEBUG] Added explicit group context system message for groupId: ${effectiveGroupId}`);
+        }
+        
+        // Create more explicit group context message if groupId is provided
+        const groupContextMessage = effectiveGroupId 
+          ? `\nIMPORTANT: This conversation is happening in a GROUP with ID "${effectiveGroupId}".
+This is critical information:
+1. When the user asks anything about scheduling for the group or finding availability, you MUST use this specific group ID (${effectiveGroupId}) with the findGroupAvailability tool.
+2. Do NOT ask the user for a group ID - you already have it.
+3. Always use this group ID (${effectiveGroupId}) for any group-related operations.
+4. When the user asks about "the group" they mean THIS group with ID ${effectiveGroupId}.
+5. Assume all scheduling questions in this chat are for this group unless explicitly stated otherwise.`
+          : '';
+        
         const instructions = `
         You are a helpful assistant tasked with assisting users with scheduling different events and/or tasks.
+        ${groupContextMessage}
+        
         ### Key Responsibilities
         1. Suggest a way to schedule a user's day based on their preferences
         - If a user asks you a question like "I am not a morning person. How can I organize my chores, studying, and gym?" provide a way to schedule these tasks.
@@ -262,82 +320,220 @@ export const completion = internalAction({
                 description: "Find available time slots for all members in a group",
                 parameters: findGroupAvailabilityParams,
                 execute: async (params) => {
-                  // Get all group members
-                  const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
-                    groupId: params.groupId,
-                  });
+                  // Use the current group context if available and no specific groupId was provided
+                  const groupIdStr = params.groupId || effectiveGroupId;
+                  
+                  // Add more logging
+                  console.log(`[DEBUG] findGroupAvailability called with params.groupId: ${params.groupId || 'none'}`);
+                  console.log(`[DEBUG] findGroupAvailability using effectiveGroupId: ${effectiveGroupId || 'none'}`);
+                  console.log(`[DEBUG] findGroupAvailability will use groupId: ${groupIdStr || 'none'}`);
+                  
+                  if (!groupIdStr) {
+                    return { error: "No group ID provided. Please specify a group." };
+                  }
+                  
+                  // Add a confirmation message about which group is being used
+                  console.log(`[INFO] Finding availability for group: ${groupIdStr}`);
+                  
+                  try {
+                    // First, check if the provided groupId is a valid convex ID
+                    // We need to make sure we're passing a proper ID to the query
+                    let validGroupId: Id<"groups">;
+                    
+                    try {
+                      // Try to convert the string to a valid ID
+                      if (typeof groupIdStr === 'string' && groupIdStr.includes('_')) {
+                        validGroupId = groupIdStr as Id<"groups">;
+                      } else {
+                        // If this isn't a valid Convex ID format, we need to fetch the actual group ID
+                        console.log(`[DEBUG] GroupID "${groupIdStr}" doesn't appear to be a valid Convex ID format`);
+                        // In a real implementation, we would perform a lookup to get the actual ID
+                        // For now, we'll return an error to make debugging clearer
+                        return { 
+                          error: "Invalid group ID format. Group IDs should be provided in Convex ID format.",
+                          providedId: groupIdStr
+                        };
+                      }
+                    } catch (error) {
+                      console.error(`[ERROR] Failed to validate groupId: ${groupIdStr}`, error);
+                      return { 
+                        error: "Failed to process the group ID.",
+                        details: (error as Error)?.message
+                      };
+                    }
+                    
+                    console.log(`[DEBUG] Using validated group ID: ${validGroupId}`);
+                    
+                    // Get all group members
+                    const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
+                      groupId: validGroupId
+                    });
 
-                  // Get each member's calendar events
-                  const memberEvents = await Promise.all(
-                    groupData.members.map((member: any) =>
-                      ctx.runAction(api.google.listGoogleCalendarEvents, {
-                        startDate: params.startDate,
-                        endDate: params.endDate,
-                        userId: member.userId,
+                    if (!groupData || !groupData.members || groupData.members.length === 0) {
+                      console.error(`[ERROR] No members found for group ID: ${validGroupId}`);
+                      return { 
+                        error: "Could not find members for this group.",
+                        groupId: validGroupId
+                      };
+                    }
+                    
+                    console.log(`[DEBUG] Found ${groupData.members.length} members in group ${validGroupId}`);
+
+                    // Get each member's calendar events
+                    const memberEvents = await Promise.all(
+                      groupData.members.map(async (member: any) => {
+                        try {
+                          console.log(`[DEBUG] Getting calendar for member: ${member.userId}`);
+                          return await ctx.runAction(api.google.listGoogleCalendarEvents, {
+                            startDate: params.startDate,
+                            endDate: params.endDate,
+                            userId: member.userId,
+                          });
+                        } catch (error) {
+                          console.error(`[ERROR] Failed to get calendar for member: ${member.userId}`, error);
+                          return [];
+                        }
                       })
-                    )
-                  );
-
-                  // Process events to find available slots
-                  const busyTimes = memberEvents.flat().map((event: any) => ({
-                    start: new Date(event.start?.dateTime || params.startDate),
-                    end: new Date(event.end?.dateTime || params.endDate),
-                  }));
-
-                  // Sort busy times
-                  busyTimes.sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
-
-                  // Find available slots
-                  const availableSlots = [];
-                  let currentTime = new Date(params.startDate);
-                  const endTime = new Date(params.endDate);
-
-                  while (currentTime < endTime) {
-                    const slotEnd = new Date(currentTime.getTime() + 30 * 60000); // 30-minute slots
-                    const isSlotAvailable = !busyTimes.some(
-                      (busy: any) =>
-                        (currentTime >= busy.start && currentTime < busy.end) ||
-                        (slotEnd > busy.start && slotEnd <= busy.end)
                     );
 
-                    if (isSlotAvailable) {
-                      availableSlots.push({
-                        start: currentTime.toISOString(),
-                        end: slotEnd.toISOString(),
-                      });
+                    // Process events to find available slots
+                    const busyTimes = memberEvents.flat().map((event: any) => ({
+                      start: new Date(event.start?.dateTime || params.startDate),
+                      end: new Date(event.end?.dateTime || params.endDate),
+                    }));
+
+                    // Sort busy times
+                    busyTimes.sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
+
+                    // Find available slots
+                    const availableSlots = [];
+                    let currentTime = new Date(params.startDate);
+                    const endTime = new Date(params.endDate);
+
+                    while (currentTime < endTime) {
+                      const slotEnd = new Date(currentTime.getTime() + 30 * 60000); // 30-minute slots
+                      const isSlotAvailable = !busyTimes.some(
+                        (busy: any) =>
+                          (currentTime >= busy.start && currentTime < busy.end) ||
+                          (slotEnd > busy.start && slotEnd <= busy.end)
+                      );
+
+                      if (isSlotAvailable) {
+                        availableSlots.push({
+                          start: currentTime.toISOString(),
+                          end: slotEnd.toISOString(),
+                        });
+                      }
+
+                      currentTime = slotEnd;
                     }
 
-                    currentTime = slotEnd;
+                    // Format the available slots in a more readable way
+                    const readableSlots = availableSlots.map(slot => {
+                      const start = new Date(slot.start);
+                      const end = new Date(slot.end);
+                      return {
+                        date: start.toLocaleDateString(),
+                        startTime: start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        endTime: end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+                        rawStart: slot.start,
+                        rawEnd: slot.end
+                      };
+                    });
+                    
+                    return {
+                      message: `Found ${availableSlots.length} available time slots for the group.`,
+                      totalSlots: availableSlots.length,
+                      groupId: validGroupId,
+                      memberCount: groupData.members.length,
+                      availableSlots: readableSlots,
+                    };
+                  } catch (error) {
+                    console.error(`[ERROR] Error in findGroupAvailability: ${error}`);
+                    return {
+                      error: "An error occurred while finding group availability.",
+                      message: (error as Error)?.message || "Unknown error",
+                      groupId: groupIdStr
+                    };
                   }
-
-                  return availableSlots;
                 },
               }),
               createGroupEvent: tool({
                 description: "Create an event for all group members",
                 parameters: z.object({
                   ...createEventParams.shape,
-                  groupId: z.string().transform((val) => val as Id<"groups">),
+                  groupId: z.string().optional().describe("The ID of the group to create an event for"),
                 }),
                 execute: async (params) => {
-                  const { groupId, ...eventParams } = params;
+                  // Extract eventParams without the groupId to avoid passing it to the calendar event
+                  const { groupId: paramGroupId, ...eventParams } = params;
                   
-                  // Get all group members
-                  const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
-                    groupId,
-                  });
+                  // Use the current group context if available and no specific groupId was provided
+                  const groupIdStr = paramGroupId || effectiveGroupId;
+                  
+                  // Add more logging
+                  console.log(`[DEBUG] createGroupEvent called with params.groupId: ${paramGroupId || 'none'}`);
+                  console.log(`[DEBUG] createGroupEvent using effectiveGroupId: ${effectiveGroupId || 'none'}`);
+                  console.log(`[DEBUG] createGroupEvent will use groupId: ${groupIdStr || 'none'}`);
+                  
+                  if (!groupIdStr) {
+                    return { error: "No group ID provided. Please specify a group." };
+                  }
+                  
+                  try {
+                    // Validate the group ID format, similar to findGroupAvailability
+                    let validGroupId: Id<"groups">;
+                    
+                    try {
+                      // Check for valid Convex ID format
+                      if (typeof groupIdStr === 'string' && groupIdStr.includes('_')) {
+                        validGroupId = groupIdStr as Id<"groups">;
+                      } else {
+                        console.log(`[DEBUG] GroupID "${groupIdStr}" doesn't appear to be a valid Convex ID format`);
+                        return { 
+                          error: "Invalid group ID format. Group IDs should be provided in Convex ID format.",
+                          providedId: groupIdStr
+                        };
+                      }
+                    } catch (error) {
+                      console.error(`[ERROR] Failed to validate groupId: ${groupIdStr}`, error);
+                      return { 
+                        error: "Failed to process the group ID.",
+                        details: (error as Error)?.message
+                      };
+                    }
+                    
+                    console.log(`[DEBUG] Using validated group ID: ${validGroupId}`);
+                  
+                    // Get all group members
+                    const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
+                      groupId: validGroupId,
+                    });
 
-                  // Create event for each member
-                  const results = await Promise.all(
-                    groupData.members.map((member: any) =>
-                      ctx.runAction(api.google.createGoogleCalendarEvent, {
-                        event: eventParams,
-                        userId: member.userId,
-                      })
-                    )
-                  );
+                    // Create event for each member
+                    const results = await Promise.all(
+                      groupData.members.map((member: any) =>
+                        ctx.runAction(api.google.createGoogleCalendarEvent, {
+                          event: eventParams,
+                          userId: member.userId,
+                        })
+                      )
+                    );
 
-                  return results;
+                    return {
+                      success: true,
+                      message: `Created event for ${groupData.members.length} group members`,
+                      groupId: validGroupId,
+                      results
+                    };
+                  } catch (error) {
+                    console.error(`[ERROR] Error in createGroupEvent: ${error}`);
+                    return {
+                      error: "An error occurred while creating group event.",
+                      message: (error as Error)?.message || "Unknown error",
+                      groupId: groupIdStr
+                    };
+                  }
                 },
               }),
             }
@@ -347,7 +543,7 @@ export const completion = internalAction({
                     role: "system",
                     content: instructions,
                 },
-                ...args.messages,
+                ...modifiedMessages, // Use the modified messages with added system message for group context
             ],
             maxSteps: 10,
             temperature: 0,

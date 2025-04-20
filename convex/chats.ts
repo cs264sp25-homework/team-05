@@ -17,6 +17,16 @@ export const getAll = query({
     },
   });
 
+  // Properly defined get function instead of an alias
+  export const get = query({
+    args: {
+      chatId: v.id("chats"),
+    },
+    handler: async (ctx, args) => {
+      return ctx.db.get(args.chatId);
+    },
+  });
+
   export const create = mutation({
     args: {
       title: v.string(),

@@ -11,6 +11,7 @@ import { Toaster } from "sonner";
 import Layout from "./components/layout";
 import Calendar from "./components/Calendar";
 import Empty from "./components/empty";
+import ChatMessagesPage from "./pages/chats/chat-messages-page";
 
 export const indexRoute = new Route({
   getParentRoute: () => rootRoute,
@@ -54,6 +55,18 @@ export const editChatRoute = new Route({
   ),
 });
 
+export const chatMessagesRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/chats/$chatId/messages",
+  component: () => (
+    <Layout
+      leftPanelContent={<ListChatsPage />}
+      middlePanelContent={<ChatMessagesPage />}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
 export const groupsRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/groups",
@@ -89,6 +102,7 @@ export const routeTree = rootRoute.addChildren([
   listChatsRoute,
   addChatRoute,
   editChatRoute,
+  chatMessagesRoute,
   groupsRoute,
   joinGroupRoute,
   groupChatRoute,

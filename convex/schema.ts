@@ -15,6 +15,7 @@ const schema = defineSchema({
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
+    groupId: v.optional(v.string()), // Store the groupId if message is from a group chat
   }).index("by_chat_id", ["chatId"]),
   groups: defineTable({
     name: v.string(),

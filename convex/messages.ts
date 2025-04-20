@@ -8,12 +8,54 @@ export const getAll = query({
     chatId: v.id("chats"),
   },
   handler: async (ctx, args) => {
-    return ctx.db
+    const messages = await ctx.db
       .query("messages")
       .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
       .collect();
+    
+    // Get the groupId from the first message (if it exists and has a groupId)
+    let groupId = undefined;
+    for (const message of messages) {
+      if (message.groupId) {
+        groupId = message.groupId;
+        console.log(`[DEBUG] Found messages with groupId: ${groupId}`);
+        break;
+      }
+    }
+    
+    // Enhance debugging for messages retrieval
+    if (groupId) {
+      console.log(`[DEBUG] getMessages - Retrieved ${messages.length} messages with groupId: ${groupId}`);
+    } else {
+      console.log(`[DEBUG] getMessages - Retrieved ${messages.length} messages without groupId`);
+    }
+    
+    // Check if any messages have different groupIds (which would be unexpected)
+    const groupIds = messages
+      .filter(m => m.groupId)
+      .map(m => m.groupId);
+    
+    if (groupIds.length > 0) {
+      const uniqueGroupIds = [...new Set(groupIds)];
+      if (uniqueGroupIds.length > 1) {
+        console.warn(`[WARN] Multiple groupIds found in messages: ${uniqueGroupIds.join(', ')}`);
+      }
+    }
+    
+    // For consistency, ensure all messages have the groupId if at least one has it
+    if (groupId) {
+      return messages.map(message => ({
+        ...message,
+        groupId: message.groupId || groupId // Ensure all messages have the group ID
+      }));
+    }
+    
+    return messages;
   },
 });
+
+// Alias for getAll, used in the group-chat-page component
+export const getMessages = getAll;
 
 export const getOne = query({
   args: {
@@ -28,6 +70,7 @@ export const create = mutation({
   args: {
     chatId: v.id("chats"),
     content: v.string(),
+    groupId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Check if the chat exists
@@ -39,11 +82,19 @@ export const create = mutation({
       });
     }
 
+    // More explicit logging for the groupId
+    if (args.groupId) {
+      console.log(`[DEBUG] Message creation - Received groupId: ${args.groupId}`);
+    } else {
+      console.log(`[DEBUG] Message creation - No groupId provided`);
+    }
+
     // Store the user message
     const messageId = await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: args.content,
       role: "user",
+      groupId: args.groupId,
     });
 
     // Get all messages in the chat so far
@@ -57,6 +108,7 @@ export const create = mutation({
       chatId: args.chatId,
       content: "...",
       role: "assistant",
+      groupId: args.groupId,
     });
 
     // Update the chat message count
@@ -66,22 +118,28 @@ export const create = mutation({
 
     const user_id = await ctx.auth.getUserIdentity();
 
+    // Log that we're scheduling OpenAI completion with groupId
+    console.log(`[DEBUG] Scheduling OpenAI completion - groupId: ${args.groupId || 'none'}`);
+
     // Schedule an action that calls ChatGPT and updates the message.
     ctx.scheduler.runAfter(0, internal.openai.completion, {
       chatId: args.chatId as Id<"chats">,
       messages: messages.map((message) => ({
         role: message.role,
         content: message.content,
+        groupId: message.groupId || args.groupId, // Ensure groupId is properly passed
       })),
       placeholderMessageId,
       user_id: user_id,
+      groupId: args.groupId, // Pass the groupId explicitly
     });
 
     return messageId;
   },
 });
 
-
+// Alias for create, used in the group-chat-page component
+export const sendMessage = create;
 
 export const update = internalMutation({
     args: {
