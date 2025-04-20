@@ -1,9 +1,10 @@
 import { v } from "convex/values";
-import {  internalAction, } from "./_generated/server";
+import { internalAction } from "./_generated/server";
 import { createOpenAI } from "@ai-sdk/openai";
-import { generateText, streamText, tool} from "ai";
+import { generateText, streamText, tool } from "ai";
 import { api, internal } from "./_generated/api";
 import { z } from "zod";
+import { Id } from "./_generated/dataModel";
 
 // export const createEventParams = z.object({
 //   summary: z.string(),
@@ -50,6 +51,12 @@ export const getSingleEventParams = z.object({
   endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
   message: z.string().describe("The user's query, e.g. 'the first event on April 8th'"),
 })
+
+export const findGroupAvailabilityParams = z.object({
+  groupId: z.string().transform((val) => val as Id<"groups">),
+  startDate: z.string().describe("The start date in ISO format (e.g., '2025-04-04T00:00:00.000Z')"),
+  endDate: z.string().describe("The end date in ISO format (e.g., '2025-04-05T00:00:00.000Z')"),
+});
 
 // type EventIdParams = z.infer<typeof getSingleEventParams>
 
@@ -131,16 +138,22 @@ export const completion = internalAction({
         ),
         placeholderMessageId: v.id("messages"),
         user_id: v.any(),
+        groupId: v.optional(v.string()),
       },
       handler: async(ctx, args) => {
         const instructions = `
         You are a helpful assistant tasked with assisting users with scheduling different events and/or tasks.
         ### Key Responsibilities
-        1. Suggest a way to schedule a user’s day based on their preferences
-        - If a user asks you a question like “I am not a morning person. How can I organize my chores, studying, and gym?” provide a way to schedule these tasks.
+        1. Suggest a way to schedule a user's day based on their preferences
+        - If a user asks you a question like "I am not a morning person. How can I organize my chores, studying, and gym?" provide a way to schedule these tasks.
         2. Scheduling conflict related questions
         - If a user asks you to offer a suggestion on how to fix a conflict (two events at the same time), use your own judgement to determine which task should be moved
-        3. Offer good scheduling practices
+        3. Group Calendar Coordination
+        - When in a group chat, you can help coordinate schedules between group members
+        - Use the findGroupAvailability function to find times when all group members are available
+        - When suggesting group meeting times, consider all members' schedules
+        - Only share general availability information, not specific details about members' events
+        4. Offer good scheduling practices
         - Whenever a user asks you for suggestions, make sure to offer advice on how they can get better at scheduling
         When scheduling tasks, present the tasks in this format:
         summary: <summary>
@@ -154,7 +167,20 @@ export const completion = internalAction({
         If they accept, call \`removeGoogleCalendarEvent\` to remove it from their calendar.
         If a user asks to edit an event or task in their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
         Then, call \`updateGoogleCalendarEvent\` to update the event.
-        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
+        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can't answer a question, clearly communicate that to the user.
+        Available Functions:
+        - createGoogleCalendarEvent: Create a new event
+        - listGoogleCalendarEvents: List events in a date range
+        - getSingleEvent: Find a specific event
+        - removeGoogleCalendarEvent: Delete an event
+        - updateGoogleCalendarEvent: Update an event
+        - findGroupAvailability: Find available time slots for all group members
+        For group scheduling:
+        1. When asked to find a meeting time, use findGroupAvailability to check everyone's schedules
+        2. Suggest the best available time slots
+        3. Wait for confirmation from the user before creating the event
+        4. Create the event for all group members once confirmed
+        Remember to protect privacy by only sharing general availability information, not specific details about individual schedules.
         `;  
         const openai = createOpenAI({
             apiKey: process.env.OPENAI_API_KEY,
@@ -231,6 +257,88 @@ export const completion = internalAction({
                   eventId = response;
                   return events;
                 }
+              }),
+              findGroupAvailability: tool({
+                description: "Find available time slots for all members in a group",
+                parameters: findGroupAvailabilityParams,
+                execute: async (params) => {
+                  // Get all group members
+                  const members = await ctx.runQuery(api.groups.getGroupMembers, {
+                    groupId: params.groupId,
+                  });
+
+                  // Get each member's calendar events
+                  const memberEvents = await Promise.all(
+                    members.map((member) =>
+                      ctx.runAction(api.google.listGoogleCalendarEvents, {
+                        startDate: params.startDate,
+                        endDate: params.endDate,
+                        userId: member.userId,
+                      })
+                    )
+                  );
+
+                  // Process events to find available slots
+                  const busyTimes = memberEvents.flat().map((event) => ({
+                    start: new Date(event.start?.dateTime || params.startDate),
+                    end: new Date(event.end?.dateTime || params.endDate),
+                  }));
+
+                  // Sort busy times
+                  busyTimes.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+                  // Find available slots
+                  const availableSlots = [];
+                  let currentTime = new Date(params.startDate);
+                  const endTime = new Date(params.endDate);
+
+                  while (currentTime < endTime) {
+                    const slotEnd = new Date(currentTime.getTime() + 30 * 60000); // 30-minute slots
+                    const isSlotAvailable = !busyTimes.some(
+                      (busy) =>
+                        (currentTime >= busy.start && currentTime < busy.end) ||
+                        (slotEnd > busy.start && slotEnd <= busy.end)
+                    );
+
+                    if (isSlotAvailable) {
+                      availableSlots.push({
+                        start: currentTime.toISOString(),
+                        end: slotEnd.toISOString(),
+                      });
+                    }
+
+                    currentTime = slotEnd;
+                  }
+
+                  return availableSlots;
+                },
+              }),
+              createGroupEvent: tool({
+                description: "Create an event for all group members",
+                parameters: z.object({
+                  ...createEventParams.shape,
+                  groupId: z.string().transform((val) => val as Id<"groups">),
+                }),
+                execute: async (params) => {
+                  const { groupId, ...eventParams } = params;
+                  
+                  // Get all group members
+                  const members = await ctx.runQuery(api.groups.getGroupMembers, {
+                    groupId,
+                  });
+
+                  // Create event for each member
+                  const results = await Promise.all(
+                    members.map((member) =>
+                      ctx.runAction(api.google.createGoogleCalendarEvent, {
+                        event: eventParams,
+                        userId: member.userId,
+                      })
+                    )
+                  );
+
+                  return results;
+                },
               }),
             }
             ,

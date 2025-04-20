@@ -1,82 +1,105 @@
-import { useRouter } from "@/hooks/use-router";
-import HomePage from "@/pages/home-page";
-import NotFoundPage from "./pages/not-found-page";
-import Layout from "./components/layout";
-import Empty from "./components/empty";
+import { Route } from "@tanstack/react-router";
+import { rootRoute } from "./root";
+import HomePage from "./pages/home-page";
 import ListChatsPage from "./pages/chats/list-chats-page";
 import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
-import MessagesPage from "./pages/messages/messages-page";
+import GroupsPage from "./pages/groups/groups-page";
+import JoinGroupPage from "./pages/join-group-page";
+import GroupChatPage from "./pages/groups/group-chat-page";
+import { Toaster } from "sonner";
+import Layout from "./components/layout";
 import Calendar from "./components/Calendar";
+import Empty from "./components/empty";
 
+export const indexRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/",
+  component: HomePage,
+});
+
+export const listChatsRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/chats",
+  component: () => (
+    <Layout
+      leftPanelContent={<ListChatsPage />}
+      middlePanelContent={<Empty message="Select a chat to view its messages." />}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
+export const addChatRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/chats/add",
+  component: () => (
+    <Layout
+      leftPanelContent={<ListChatsPage />}
+      middlePanelContent={<AddChatPage />}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
+export const editChatRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/chats/$chatId/edit",
+  component: () => (
+    <Layout
+      leftPanelContent={<ListChatsPage />}
+      middlePanelContent={<EditChatPage />}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
+export const groupsRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/groups",
+  component: () => (
+    <Layout
+      leftPanelContent={<GroupsPage />}
+      middlePanelContent={null}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
+export const joinGroupRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/join-group/$inviteCode",
+  component: JoinGroupPage,
+});
+
+export const groupChatRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/groups/$groupId/chat",
+  component: () => (
+    <Layout
+      leftPanelContent={<GroupsPage />}
+      middlePanelContent={<GroupChatPage />}
+      rightPanelContent={<Calendar />}
+    />
+  ),
+});
+
+export const routeTree = rootRoute.addChildren([
+  indexRoute,
+  listChatsRoute,
+  addChatRoute,
+  editChatRoute,
+  groupsRoute,
+  joinGroupRoute,
+  groupChatRoute,
+]);
 
 function App() {
-  const { currentRoute, params } = useRouter();
-  console.log(currentRoute);
-
-  if (!currentRoute) {
-    return <NotFoundPage />;
-  }
-
-
-  if (currentRoute === "home") {
-    return <HomePage />;
-  }
-  const renderContent = () => {
-    switch(currentRoute) {
-      case "chats":
-        return {
-          left: <ListChatsPage />,
-          middle: <Empty message="Select a chat to view its messages." />,
-          right: null,
-        }
-      case "addChat":
-        return {
-          left: <ListChatsPage />,
-          middle: <AddChatPage />,
-          right: <Calendar />,
-        };
-      case "editChat":
-        return {
-          left: <ListChatsPage />,
-          middle: <EditChatPage chatId={params.chatId as string} />,
-          right: null,
-        };
-      case "messages":
-        return {
-          left: <ListChatsPage />,
-          middle: <MessagesPage chatId={params.chatId as string} />,
-          right: <Calendar />,
-        };
-      default:
-        return {
-          left: null,
-          middle: <Empty message="Page not found" />,
-          right: null,
-        };
-    }
-  }
-
-  const { left, middle, right } = renderContent();
-
   return (
-      <Layout
-        leftPanelContent={left}
-        middlePanelContent={middle}
-        rightPanelContent={right}
-        className="h-screen"
-      />
+    <>
+      <Toaster position="bottom-right" />
+    </>
   );
 }
-
-
-// https://www.googleapis.com/auth/calendar.readonly
-
-
-
-
-// function Content() {
-//   return <div>Authenticated content</div>;
-// }
 
 export default App;

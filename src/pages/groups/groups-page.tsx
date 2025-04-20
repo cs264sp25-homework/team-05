@@ -1,0 +1,187 @@
+import { useState } from "react";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Users, Plus, Link as LinkIcon } from "lucide-react";
+import { toast } from "sonner";
+import { Authenticated, Unauthenticated } from "convex/react";
+import { SignInButton } from "@clerk/clerk-react";
+
+const GroupsContent = () => {
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newGroup, setNewGroup] = useState({ name: "", description: "" });
+  const [showInviteCode, setShowInviteCode] = useState<string | null>(null);
+
+  const groups = useQuery(api.groups.getUserGroups) || [];
+  const createGroup = useMutation(api.groups.createGroup);
+
+  const handleCreateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const { inviteCode } = await createGroup(newGroup);
+      setNewGroup({ name: "", description: "" });
+      setIsCreateOpen(false);
+      setShowInviteCode(inviteCode);
+      toast.success("Group created successfully!");
+    } catch (error) {
+      toast.error("Failed to create group. Please try again.");
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">My Groups</h1>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Group
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Group</DialogTitle>
+              <DialogDescription>
+                Create a group to coordinate schedules with your team.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateGroup} className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Group Name</label>
+                <Input
+                  value={newGroup.name}
+                  onChange={(e) =>
+                    setNewGroup({ ...newGroup, name: e.target.value })
+                  }
+                  placeholder="Enter group name"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <Textarea
+                  value={newGroup.description}
+                  onChange={(e) =>
+                    setNewGroup({ ...newGroup, description: e.target.value })
+                  }
+                  placeholder="Enter group description"
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                Create Group
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {showInviteCode && (
+        <Card className="mb-8 bg-blue-50">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <LinkIcon className="w-5 h-5 mr-2" />
+              Invite Link Generated
+            </CardTitle>
+            <CardDescription>
+              Share this link with others to invite them to your group
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4">
+              <code className="bg-white px-4 py-2 rounded-md flex-1">
+                {`${window.location.origin}/team-05/join-group/${showInviteCode}`}
+              </code>
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/team-05/join-group/${showInviteCode}`);
+                  toast.success("Invite link copied to clipboard");
+                }}
+              >
+                Copy
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {groups.map((group) => (
+          <Card key={group._id} className="hover:shadow-lg transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="w-5 h-5 mr-2" />
+                {group.name}
+              </CardTitle>
+              {group.description && (
+                <CardDescription>{group.description}</CardDescription>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">
+                  Role: {group.role}
+                </span>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/team-05/join-group/${group.inviteCode}`);
+                    toast.success("Invite link copied to clipboard");
+                  }}
+                >
+                  Share
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const GroupsPage = () => {
+  return (
+    <>
+      <Authenticated>
+        <GroupsContent />
+      </Authenticated>
+      <Unauthenticated>
+        <div className="container mx-auto py-8 text-center">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign In Required</CardTitle>
+              <CardDescription>
+                Please sign in to view and manage your groups
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <SignInButton mode="modal">
+                <Button>Sign In</Button>
+              </SignInButton>
+            </CardContent>
+          </Card>
+        </div>
+      </Unauthenticated>
+    </>
+  );
+};
+
+export default GroupsPage; 
