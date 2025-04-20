@@ -23,11 +23,20 @@ import { Users, Plus, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInButton } from "@clerk/clerk-react";
+import GroupDetailsDialog from "@/components/group-details-dialog";
+import { Id } from "../../../convex/_generated/dataModel";
 
 const GroupsContent = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
   const [showInviteCode, setShowInviteCode] = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<{
+    id: Id<"groups">;
+    name: string;
+    inviteCode: string;
+    description: string;
+    role: string;
+  } | null>(null);
 
   const groups = useQuery(api.groups.getUserGroups);
   const createGroup = useMutation(api.groups.createGroup);
@@ -43,6 +52,16 @@ const GroupsContent = () => {
     } catch (error) {
       toast.error("Failed to create group. Please try again.");
     }
+  };
+
+  const handleGroupClick = (group: any) => {
+    setSelectedGroup({
+      id: group._id,
+      name: group.name,
+      inviteCode: group.inviteCode,
+      description: group.description,
+      role: group.role
+    });
   };
 
   return (
@@ -151,7 +170,11 @@ const GroupsContent = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map((group) => (
-            <Card key={group._id} className="hover:shadow-lg transition-shadow">
+            <Card 
+              key={group._id} 
+              className="hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => handleGroupClick(group)}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Users className="w-5 h-5 mr-2" />
@@ -168,7 +191,8 @@ const GroupsContent = () => {
                   </span>
                   <Button
                     variant="outline"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click
                       navigator.clipboard.writeText(
                         `${window.location.origin}/team-05/join-group/${group.inviteCode}`
                       );
@@ -183,6 +207,17 @@ const GroupsContent = () => {
           ))}
         </div>
       )}
+
+      {/* Group details dialog */}
+      <GroupDetailsDialog
+        groupId={selectedGroup?.id || null}
+        groupName={selectedGroup?.name}
+        groupDescription={selectedGroup?.description}
+        groupRole={selectedGroup?.role}
+        groupInviteCode={selectedGroup?.inviteCode}
+        open={!!selectedGroup}
+        onOpenChange={(open) => !open && setSelectedGroup(null)}
+      />
     </div>
   );
 };

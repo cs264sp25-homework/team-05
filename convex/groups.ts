@@ -1,6 +1,6 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { api } from "./_generated/api";
+import { mutation, query, action } from "./_generated/server";
+import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
 // Generate a random invite code
@@ -175,7 +175,7 @@ export const getUserGroups = query({
   },
 });
 
-// Get group members
+// Get basic group members info - without profiles
 export const getGroupMembers = query({
   args: {
     groupId: v.id("groups"),
@@ -187,22 +187,214 @@ export const getGroupMembers = query({
     }
 
     // Check if user is a member of the group
-    const membership = await ctx.db
+    const currentUserMembership = await ctx.db
       .query("groupMembers")
       .withIndex("by_group_and_user", (q) =>
         q.eq("groupId", args.groupId).eq("userId", identity.subject)
       )
       .first();
 
-    if (!membership) {
+    if (!currentUserMembership) {
       throw new Error("Not a member of this group");
     }
 
+    // Get all members of the group
     const members = await ctx.db
       .query("groupMembers")
       .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
 
-    return members;
+    const membersWithBasicInfo = members.map(member => {
+      const isCurrentUser = member.userId === identity.subject;
+      return {
+        ...member,
+        name: isCurrentUser ? (identity.name || member.userId.substring(0, 8)) : member.userId.substring(0, 8),
+        email: isCurrentUser ? (identity.email || "Email unavailable") : "Loading...",
+        pictureUrl: isCurrentUser ? identity.pictureUrl : null,
+        isCurrentUser
+      };
+    });
+
+    return {
+      members: membersWithBasicInfo,
+      currentUserRole: currentUserMembership.role
+    };
+  },
+});
+
+// Action to fetch enriched group member profiles
+export const enrichGroupMemberProfiles = action({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args): Promise<{
+    members: Array<{
+      userId: string;
+      groupId: Id<"groups">;
+      role: string;
+      joinedAt: number;
+      name: string;
+      email: string;
+      pictureUrl: string | null;
+      isCurrentUser: boolean;
+    }>;
+    currentUserRole: string;
+  }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // First, get the user membership using a query
+    const membershipResult: {
+      members: Array<any>;
+      currentUserRole: string;
+    } = await ctx.runQuery(api.groups.getGroupMembers, {
+      groupId: args.groupId
+    });
+    
+    if (!membershipResult) {
+      throw new Error("Not a member of this group");
+    }
+    
+    const members: Array<any> = membershipResult.members;
+    const currentUserRole: string = membershipResult.currentUserRole;
+
+    // Extract userIds for profile fetch
+    const userIds = members.map((member: any) => member.userId);
+    
+    console.log(`[DEBUG] Enriching profiles for ${userIds.length} members in group ${args.groupId}`);
+    
+    // Fetch all user profiles using the action
+    const userProfiles = await ctx.runAction(
+      internal.users.getUserProfiles, 
+      { userIds }
+    );
+    
+    // Create a lookup map
+    const profileMap: Record<string, any> = {};
+    for (const profile of userProfiles) {
+      profileMap[profile.userId] = profile;
+    }
+    
+    // Merge member data with profiles
+    const enrichedMembers = members.map((member: any) => {
+      const profile = profileMap[member.userId];
+      const isCurrentUser = member.userId === identity.subject;
+      
+      return {
+        userId: member.userId,
+        groupId: member.groupId,
+        role: member.role,
+        joinedAt: member.joinedAt,
+        name: profile?.name || (isCurrentUser ? identity.name : member.userId.substring(0, 8)),
+        email: profile?.email || (isCurrentUser ? identity.email : "Email unavailable"),
+        pictureUrl: profile?.imageUrl || (isCurrentUser ? identity.pictureUrl : null),
+        isCurrentUser
+      };
+    });
+    
+    return {
+      members: enrichedMembers,
+      currentUserRole
+    };
+  },
+});
+
+// Remove a member from a group
+export const removeMember = mutation({
+  args: {
+    groupId: v.id("groups"),
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if current user is an admin of the group
+    const adminMembership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", identity.subject)
+      )
+      .first();
+
+    if (!adminMembership || adminMembership.role !== "admin") {
+      throw new Error("Only group admins can remove members");
+    }
+
+    // Cannot remove yourself as admin
+    if (args.userId === identity.subject) {
+      throw new Error("You cannot remove yourself from the group");
+    }
+
+    // Check if member to remove exists
+    const memberToRemove = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", args.userId)
+      )
+      .first();
+
+    if (!memberToRemove) {
+      throw new Error("Member not found in this group");
+    }
+
+    // Remove the member
+    await ctx.db.delete(memberToRemove._id);
+
+    return true;
+  },
+});
+
+// Delete an entire group
+export const deleteGroup = mutation({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if current user is an admin of the group
+    const adminMembership = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group_and_user", (q) =>
+        q.eq("groupId", args.groupId).eq("userId", identity.subject)
+      )
+      .first();
+
+    if (!adminMembership || adminMembership.role !== "admin") {
+      throw new Error("Only group admins can delete the group");
+    }
+
+    const group = await ctx.db.get(args.groupId);
+    if (!group) {
+      throw new Error("Group not found");
+    }
+
+    // First, delete all members
+    const members = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    for (const member of members) {
+      await ctx.db.delete(member._id);
+    }
+
+    // Delete the group's chat if it exists
+    if (group.chatId) {
+      await ctx.db.delete(group.chatId);
+    }
+
+    // Finally, delete the group itself
+    await ctx.db.delete(args.groupId);
+
+    return true;
   },
 }); 

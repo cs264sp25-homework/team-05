@@ -263,13 +263,13 @@ export const completion = internalAction({
                 parameters: findGroupAvailabilityParams,
                 execute: async (params) => {
                   // Get all group members
-                  const members = await ctx.runQuery(api.groups.getGroupMembers, {
+                  const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
                     groupId: params.groupId,
                   });
 
                   // Get each member's calendar events
                   const memberEvents = await Promise.all(
-                    members.map((member) =>
+                    groupData.members.map((member: any) =>
                       ctx.runAction(api.google.listGoogleCalendarEvents, {
                         startDate: params.startDate,
                         endDate: params.endDate,
@@ -279,13 +279,13 @@ export const completion = internalAction({
                   );
 
                   // Process events to find available slots
-                  const busyTimes = memberEvents.flat().map((event) => ({
+                  const busyTimes = memberEvents.flat().map((event: any) => ({
                     start: new Date(event.start?.dateTime || params.startDate),
                     end: new Date(event.end?.dateTime || params.endDate),
                   }));
 
                   // Sort busy times
-                  busyTimes.sort((a, b) => a.start.getTime() - b.start.getTime());
+                  busyTimes.sort((a: any, b: any) => a.start.getTime() - b.start.getTime());
 
                   // Find available slots
                   const availableSlots = [];
@@ -295,7 +295,7 @@ export const completion = internalAction({
                   while (currentTime < endTime) {
                     const slotEnd = new Date(currentTime.getTime() + 30 * 60000); // 30-minute slots
                     const isSlotAvailable = !busyTimes.some(
-                      (busy) =>
+                      (busy: any) =>
                         (currentTime >= busy.start && currentTime < busy.end) ||
                         (slotEnd > busy.start && slotEnd <= busy.end)
                     );
@@ -323,13 +323,13 @@ export const completion = internalAction({
                   const { groupId, ...eventParams } = params;
                   
                   // Get all group members
-                  const members = await ctx.runQuery(api.groups.getGroupMembers, {
+                  const groupData = await ctx.runQuery(api.groups.getGroupMembers, {
                     groupId,
                   });
 
                   // Create event for each member
                   const results = await Promise.all(
-                    members.map((member) =>
+                    groupData.members.map((member: any) =>
                       ctx.runAction(api.google.createGoogleCalendarEvent, {
                         event: eventParams,
                         userId: member.userId,
