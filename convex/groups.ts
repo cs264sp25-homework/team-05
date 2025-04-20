@@ -151,16 +151,25 @@ export const getUserGroups = query({
       .withIndex("by_user", (q) => q.eq("userId", userId))
       .collect();
 
-    // Get the group details for each membership
-    const groups = await Promise.all(
+    // Get the group details for each membership and filter out any deleted groups
+    const groups = (await Promise.all(
       memberships.map(async (membership) => {
-        const group = await ctx.db.get(membership.groupId);
-        return {
-          ...group,
-          role: membership.role,
-        };
+        try {
+          const group = await ctx.db.get(membership.groupId);
+          if (!group) {
+            return null; // Group was deleted
+          }
+          return {
+            ...group,
+            _id: membership.groupId, // Ensure we include the group ID
+            role: membership.role,
+          };
+        } catch (error) {
+          console.error("Error fetching group:", error);
+          return null;
+        }
       })
-    );
+    )).filter((group): group is NonNullable<typeof group> => group !== null);
 
     return groups;
   },

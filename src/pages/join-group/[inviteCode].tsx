@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SignInButton, useUser } from "@clerk/clerk-react";
 import { useRouter } from "@/hooks/use-router";
 import { api } from "../../../convex/_generated/api";
@@ -10,31 +10,12 @@ import { Users } from "lucide-react";
 import { useParams } from "@tanstack/react-router";
 
 const JoinGroupPage = () => {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn } = useUser();
   const { navigate } = useRouter();
   const [isJoining, setIsJoining] = useState(false);
-  const [hasCalendarAccess, setHasCalendarAccess] = useState(false);
   const { inviteCode } = useParams({ from: "/join-group/$inviteCode" });
 
   const joinGroup = useMutation(api.groups.joinGroup);
-
-  useEffect(() => {
-    // Check for Google Calendar access when user is signed in
-    if (isSignedIn) {
-      checkCalendarAccess();
-    }
-  }, [isSignedIn]);
-
-  const checkCalendarAccess = async () => {
-    try {
-      // You'll need to implement this function to check if the user has granted calendar access
-      // This could be stored in your database or checked through the Google Calendar API
-      const hasAccess = await user?.publicMetadata?.hasCalendarAccess;
-      setHasCalendarAccess(!!hasAccess);
-    } catch (error) {
-      console.error("Error checking calendar access:", error);
-    }
-  };
 
   const handleJoinGroup = async () => {
     if (!inviteCode || !isSignedIn) return;
@@ -43,9 +24,13 @@ const JoinGroupPage = () => {
     try {
       await joinGroup({ inviteCode });
       toast.success("Successfully joined the group!");
-      navigate("groups");
-    } catch (error) {
-      toast.error("Failed to join group. Please try again.");
+      // Add a small delay to allow the backend to update
+      setTimeout(() => {
+        navigate("groups");
+      }, 1000);
+    } catch (error: any) {
+      console.error("Error joining group:", error);
+      toast.error(error?.message || "Failed to join group. Please try again.");
     } finally {
       setIsJoining(false);
     }
@@ -84,8 +69,6 @@ const JoinGroupPage = () => {
           <CardDescription>
             {!isSignedIn
               ? "Sign in to join this group"
-              : !hasCalendarAccess
-              ? "Grant calendar access to continue"
               : "You've been invited to join a group"}
           </CardDescription>
         </CardHeader>
@@ -95,18 +78,6 @@ const JoinGroupPage = () => {
               <SignInButton mode="modal">
                 <Button>Sign In to Continue</Button>
               </SignInButton>
-            </div>
-          ) : !hasCalendarAccess ? (
-            <div className="text-center">
-              <Button
-                onClick={() => {
-                  // Implement calendar authorization flow
-                  // This should redirect to Google OAuth
-                  window.location.href = "/api/auth/google";
-                }}
-              >
-                Connect Google Calendar
-              </Button>
             </div>
           ) : (
             <div className="flex justify-end gap-4">

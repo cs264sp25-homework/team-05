@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Users, Plus, Link as LinkIcon } from "lucide-react";
+import { Users, Plus, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInButton } from "@clerk/clerk-react";
@@ -29,7 +29,7 @@ const GroupsContent = () => {
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
   const [showInviteCode, setShowInviteCode] = useState<string | null>(null);
 
-  const groups = useQuery(api.groups.getUserGroups) || [];
+  const groups = useQuery(api.groups.getUserGroups);
   const createGroup = useMutation(api.groups.createGroup);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
@@ -49,48 +49,60 @@ const GroupsContent = () => {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Groups</h1>
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Group
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Group</DialogTitle>
-              <DialogDescription>
-                Create a group to coordinate schedules with your team.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateGroup} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Group Name</label>
-                <Input
-                  value={newGroup.name}
-                  onChange={(e) =>
-                    setNewGroup({ ...newGroup, name: e.target.value })
-                  }
-                  placeholder="Enter group name"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Description</label>
-                <Textarea
-                  value={newGroup.description}
-                  onChange={(e) =>
-                    setNewGroup({ ...newGroup, description: e.target.value })
-                  }
-                  placeholder="Enter group description"
-                />
-              </div>
-              <Button type="submit" className="w-full">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.location.reload();
+              toast.info("Refreshing groups...");
+            }}
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </Button>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
                 Create Group
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Group</DialogTitle>
+                <DialogDescription>
+                  Create a group to coordinate schedules with your team.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateGroup} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Group Name</label>
+                  <Input
+                    value={newGroup.name}
+                    onChange={(e) =>
+                      setNewGroup({ ...newGroup, name: e.target.value })
+                    }
+                    placeholder="Enter group name"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Description</label>
+                  <Textarea
+                    value={newGroup.description}
+                    onChange={(e) =>
+                      setNewGroup({ ...newGroup, description: e.target.value })
+                    }
+                    placeholder="Enter group description"
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  Create Group
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {showInviteCode && (
@@ -111,7 +123,9 @@ const GroupsContent = () => {
               </code>
               <Button
                 onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/team-05/join-group/${showInviteCode}`);
+                  navigator.clipboard.writeText(
+                    `${window.location.origin}/team-05/join-group/${showInviteCode}`
+                  );
                   toast.success("Invite link copied to clipboard");
                 }}
               >
@@ -122,37 +136,53 @@ const GroupsContent = () => {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {groups.map((group) => (
-          <Card key={group._id} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                {group.name}
-              </CardTitle>
-              {group.description && (
-                <CardDescription>{group.description}</CardDescription>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  Role: {group.role}
-                </span>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/team-05/join-group/${group.inviteCode}`);
-                    toast.success("Invite link copied to clipboard");
-                  }}
-                >
-                  Share
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {groups === undefined ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Loading groups...</p>
+        </div>
+      ) : groups === null ? (
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading groups. Please try refreshing the page.</p>
+        </div>
+      ) : groups.length === 0 ? (
+        <div className="text-center py-8">
+          <p className="text-gray-500">You haven't joined any groups yet.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {groups.map((group) => (
+            <Card key={group._id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  {group.name}
+                </CardTitle>
+                {group.description && (
+                  <CardDescription>{group.description}</CardDescription>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">
+                    Role: {group.role}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        `${window.location.origin}/team-05/join-group/${group.inviteCode}`
+                      );
+                      toast.success("Invite link copied to clipboard");
+                    }}
+                  >
+                    Share
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

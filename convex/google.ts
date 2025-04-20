@@ -1,6 +1,6 @@
 "use node";
 import { v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { action, internalAction, query } from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
 import { internal } from "./_generated/api";

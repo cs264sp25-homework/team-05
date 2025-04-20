@@ -5,7 +5,7 @@ import ListChatsPage from "./pages/chats/list-chats-page";
 import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
 import GroupsPage from "./pages/groups/groups-page";
-import JoinGroupPage from "./pages/join-group-page";
+import JoinGroupPage from "./pages/join-group/[inviteCode]";
 import GroupChatPage from "./pages/groups/group-chat-page";
 import { Toaster } from "sonner";
 import Layout from "./components/layout";
