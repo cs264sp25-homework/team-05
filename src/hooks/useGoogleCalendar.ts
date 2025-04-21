@@ -30,13 +30,13 @@ export function useGoogleCalendar() {
   const updateEventAction = useAction(api.google.updateGoogleCalendarEvent);
   const deleteEventAction = useAction(api.google.deleteGoogleCalendarEvent);
 
-  const eventUpdateSignal = useQuery(api.calendar.listenForUpdateSignals); 
+  // const eventUpdateSignal = useQuery(api.calendar.listenForUpdateSignals); 
 
   useEffect(() => {
-    if (isAuthenticated && eventUpdateSignal?.[0]) {
+    if (isAuthenticated ) {
       loadEvents(new Date().toISOString(), new Date().toISOString());
     }
-  }, [isAuthenticated, eventUpdateSignal]);
+  }, [isAuthenticated]);
 
   const loadEvents = async (startDate: string, endDate: string) => {
     if (!isAuthenticated) return;

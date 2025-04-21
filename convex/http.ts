@@ -14,7 +14,6 @@ http.route({
         const resourceId = req.headers.get("X-Goog-Resource-ID");
 
         console.log('Header:', req.headers);
-        console.log('Body:', req.body);
         console.log('Resource ID:', resourceId);
 
         //if resourceId Id is in db and it belongs to current user than fetch the events
@@ -28,10 +27,14 @@ http.route({
         //     console.log("User not found");
         //     return new Response("User not found", { status: 404 });
         // }
-
-        await ctx.runMutation(internal.calendar.insertCalendarEventUpdateSignal, {
-            resourceId: resourceId as string,
+        await ctx.runAction(api.google.listGoogleCalendarEvents, {
+            startDate: new Date().toISOString(),
+            endDate: new Date().toISOString(),
         })
+
+        // await ctx.runMutation(internal.calendar.insertCalendarEventUpdateSignal, {
+        //     resourceId: resourceId as string,
+        // })
       
         return new Response("OK", { status: 200 });
     }),
