@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation, query, action } from "./_generated/server";
+import { mutation, query, action, internalQuery } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
@@ -23,23 +23,27 @@ export const createGroup = mutation({
     const userId = identity.subject;
     const inviteCode = generateInviteCode();
 
-    // Create a chat for the group
-    const chatId = await ctx.db.insert("chats", {
-      title: `${args.name} Group Chat`,
-      description: args.description,
-      messageCount: 0,
-      pageCount: 1,
-    });
-
-    // Create the group
+    // 1. Create the group FIRST to get the groupId
     const groupId = await ctx.db.insert("groups", {
       name: args.name,
       description: args.description,
       createdBy: userId,
       inviteCode,
-      chatId,
+      chatId: undefined, // chatId will be added later
       createdAt: Date.now(),
     });
+
+    // 2. Create a chat for the group, including the groupId
+    const chatId = await ctx.db.insert("chats", {
+      title: `${args.name} Group Chat`, 
+      description: args.description,
+      messageCount: 0,
+      pageCount: 0, // Typically starts at 0 files/pages
+      groupId: groupId, // <-- STORE THE GROUP ID HERE
+    });
+    
+    // 3. Update the group document with the chatId
+    await ctx.db.patch(groupId, { chatId: chatId });
 
     // Add creator as admin
     await ctx.db.insert("groupMembers", {
@@ -441,5 +445,31 @@ export const leaveGroup = mutation({
     await ctx.db.delete(membership._id);
 
     return true;
+  },
+});
+
+// Internal query to get group members directly (no auth check)
+export const getGroupMembersInternal = internalQuery({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    // Get all members of the group directly
+    const members = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    // Add basic information to each member
+    const membersWithBasicInfo = members.map(member => {
+      return {
+        ...member,
+        name: member.userId.substring(0, 8), // Simple name based on userId
+        email: "Member",
+        pictureUrl: null,
+      };
+    });
+
+    return membersWithBasicInfo;
   },
 }); 

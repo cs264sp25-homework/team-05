@@ -31,11 +31,11 @@ declare module "@tanstack/react-router" {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
-      <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-        <TooltipProvider>
+    <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+      <TooltipProvider>
           <RouterProvider router={router} />
         </TooltipProvider>
-      </ConvexProviderWithClerk>
+    </ConvexProviderWithClerk>
     </ClerkProvider>
   </React.StrictMode>
 );

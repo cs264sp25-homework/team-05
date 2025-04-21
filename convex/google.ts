@@ -3,7 +3,8 @@ import { v } from "convex/values";
 import { action, internalAction, query } from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
-import { internal } from "./_generated/api";
+import { internal, api } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_OAUTH_CLIENT_ID,
@@ -230,5 +231,116 @@ export const deleteGoogleCalendarEvent = action({
       auth: client,
     });
     return response.data;
+  }
+});
+
+// Define interface for group member
+interface GroupMember {
+  userId: string;
+  groupId: Id<"groups">;
+  role: string;
+  joinedAt: number;
+  name?: string;
+  email?: string;
+  pictureUrl?: string | null;
+  isCurrentUser?: boolean;
+}
+
+// Define interface for calendar event
+interface CalendarEvent {
+  start: {
+    dateTime?: string;
+    date?: string;
+  };
+  end: {
+    dateTime?: string;
+    date?: string;
+  };
+  [key: string]: any;
+}
+
+// Define interface for member events
+interface MemberEvents {
+  userId: string;
+  events: CalendarEvent[];
+}
+
+export const findGroupAvailability = action({
+  args: {
+    groupId: v.id("groups"),
+    startDate: v.string(),
+    endDate: v.string(),
+    duration: v.number(), // duration in minutes
+  },
+  handler: async (ctx, args) => {
+    // 1. Get all group members
+    const groupMembersResponse = await ctx.runQuery(api.groups.getGroupMembers, {
+      groupId: args.groupId
+    });
+
+    if (!groupMembersResponse || !groupMembersResponse.members || groupMembersResponse.members.length === 0) {
+      throw new Error("No members found in the group");
+    }
+
+    // 2. Get calendar events for each member
+    const memberEvents = await Promise.all(
+      groupMembersResponse.members.map(async (member: GroupMember) => {
+        const events = await ctx.runAction(api.google.listGoogleCalendarEvents, {
+          startDate: args.startDate,
+          endDate: args.endDate,
+          userId: member.userId
+        });
+        return {
+          userId: member.userId,
+          events: events || []
+        };
+      })
+    );
+
+    // 3. Convert events to busy time slots
+    const busySlots = memberEvents.flatMap((memberEvent: any) => {
+      const events = memberEvent.events || [];
+      return events.map((event: any) => {
+        // Safely handle potentially undefined or missing properties
+        const start = event.start?.dateTime || event.start?.date || '';
+        const end = event.end?.dateTime || event.end?.date || '';
+        return {
+          start: new Date(start),
+          end: new Date(end)
+        };
+      });
+    }).sort((a: { start: Date }, b: { start: Date }) => a.start.getTime() - b.start.getTime());
+
+    // 4. Find available time slots
+    const availableSlots = [];
+    const startTime = new Date(args.startDate);
+    const endTime = new Date(args.endDate);
+    const durationMs = args.duration * 60 * 1000; // Convert minutes to milliseconds
+
+    let currentTime = new Date(startTime);
+
+    while (currentTime < endTime) {
+      const slotEnd = new Date(currentTime.getTime() + durationMs);
+      
+      // Check if this time slot overlaps with any busy slots
+      const isAvailable = !busySlots.some((busy: { start: Date; end: Date }) => 
+        (currentTime < busy.end && slotEnd > busy.start)
+      );
+
+      if (isAvailable) {
+        // Only include slots during reasonable hours (e.g., 9 AM to 5 PM)
+        if (currentTime.getHours() >= 9 && currentTime.getHours() < 17) {
+          availableSlots.push({
+            start: new Date(currentTime),
+            end: new Date(slotEnd)
+          });
+        }
+      }
+
+      // Move to next 30-minute slot
+      currentTime = new Date(currentTime.getTime() + 30 * 60 * 1000);
+    }
+
+    return availableSlots;
   }
 });

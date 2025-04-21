@@ -31,13 +31,13 @@ const Header: React.FC = () => {
       className={cn(
         "flex items-center justify-between gap-4 w-full py-2 px-4 border-b",
         {
-          "border-2 border-green-500": DEBUG,
+        "border-2 border-green-500": DEBUG,
         }
       )}
     >
       <div
         className={cn("flex items-center justify-start gap-2", {
-          "border-2 border-blue-500": DEBUG,
+            "border-2 border-blue-500": DEBUG,
         })}
       >
         <Calendar className="w-6 h-6" />

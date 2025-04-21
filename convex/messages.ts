@@ -70,7 +70,7 @@ export const create = mutation({
   args: {
     chatId: v.id("chats"),
     content: v.string(),
-    groupId: v.optional(v.string()),
+    groupId: v.optional(v.id("groups")),
   },
   handler: async (ctx, args) => {
     // Check if the chat exists
@@ -85,6 +85,7 @@ export const create = mutation({
     // More explicit logging for the groupId
     if (args.groupId) {
       console.log(`[DEBUG] Message creation - Received groupId: ${args.groupId}`);
+      console.log(`[DEBUG] Message creation - groupId type: ${typeof args.groupId}`);
     } else {
       console.log(`[DEBUG] Message creation - No groupId provided`);
     }
@@ -96,12 +97,16 @@ export const create = mutation({
       role: "user",
       groupId: args.groupId,
     });
+    
+    console.log(`[DEBUG] Created user message with ID: ${messageId} and groupId: ${args.groupId || 'none'}`);
 
     // Get all messages in the chat so far
     const messages = await ctx.db
       .query("messages")
       .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
       .collect();
+      
+    console.log(`[DEBUG] Retrieved ${messages.length} messages, with groupIds: ${JSON.stringify(messages.map(m => m.groupId))}`);
 
     // Store a placeholder message for the assistant
     const placeholderMessageId = await ctx.db.insert("messages", {
@@ -110,6 +115,8 @@ export const create = mutation({
       role: "assistant",
       groupId: args.groupId,
     });
+    
+    console.log(`[DEBUG] Created assistant placeholder with ID: ${placeholderMessageId} and groupId: ${args.groupId || 'none'}`);
 
     // Update the chat message count
     await ctx.db.patch(args.chatId, {
@@ -120,6 +127,16 @@ export const create = mutation({
 
     // Log that we're scheduling OpenAI completion with groupId
     console.log(`[DEBUG] Scheduling OpenAI completion - groupId: ${args.groupId || 'none'}`);
+    console.log(`[DEBUG] groupId is of type: ${typeof args.groupId}`);
+    
+    if (args.groupId) {
+      try {
+        // Try to parse it as an ID to see if it's a valid format
+        console.log(`[DEBUG] groupId value: ${JSON.stringify(args.groupId)}`);
+      } catch (e) {
+        console.error(`[ERROR] Error stringifying groupId: ${e}`);
+      }
+    }
 
     // Schedule an action that calls ChatGPT and updates the message.
     ctx.scheduler.runAfter(0, internal.openai.completion, {
@@ -128,7 +145,12 @@ export const create = mutation({
         role: message.role,
         content: message.content,
         groupId: message.groupId || args.groupId, // Ensure groupId is properly passed
-      })),
+      })).concat([{
+        // Add the current message (which isn't in the DB query results yet)
+        role: "user",
+        content: args.content,
+        groupId: args.groupId
+      }]),
       placeholderMessageId,
       user_id: user_id,
       groupId: args.groupId, // Pass the groupId explicitly
