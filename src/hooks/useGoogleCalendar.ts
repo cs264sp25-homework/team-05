@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAction, useConvexAuth } from 'convex/react';
+import { useAction, useConvexAuth, useQuery } from 'convex/react';
 import { api } from "../../convex/_generated/api";
 import { useAuth } from '@clerk/clerk-react';
+import { Id } from 'convex/_generated/dataModel';
 
 interface CalendarEvent {
   id: string;
@@ -22,17 +23,20 @@ export function useGoogleCalendar() {
   const [error, setError] = useState<Error | null>(null);
 
   const { userId } = useAuth();
+  
 
   const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
   const createEvent = useAction(api.google.createGoogleCalendarEvent);
   const updateEventAction = useAction(api.google.updateGoogleCalendarEvent);
   const deleteEventAction = useAction(api.google.deleteGoogleCalendarEvent);
 
+  const eventUpdateSignal = useQuery(api.calendar.listenForUpdateSignals); 
+
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && eventUpdateSignal?.[0]) {
       loadEvents(new Date().toISOString(), new Date().toISOString());
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, eventUpdateSignal]);
 
   const loadEvents = async (startDate: string, endDate: string) => {
     if (!isAuthenticated) return;

@@ -1,9 +1,11 @@
 "use node";
-import { v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { ConvexError, v } from "convex/values";
+import { action, internalAction} from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
+import { v4 as uuidv4 } from 'uuid';
+
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_OAUTH_CLIENT_ID,
@@ -84,6 +86,10 @@ export const listGoogleCalendarEvents = action({
         orderBy: "startTime",
         auth: client,
       });
+
+      await ctx.runAction(api.google.createWatchChannel);
+
+      
     
       return events.data.items || [];
     }
@@ -232,3 +238,111 @@ export const deleteGoogleCalendarEvent = action({
     return response.data;
   }
 });
+
+// export const createEventWatchChannel = internalAction({
+
+//   handler: async (ctx) => {
+
+//     const user_id = await ctx.auth.getUserIdentity();
+//     if (!user_id) {
+//       console.log("User id is null :(")
+//       return;
+//     }
+//     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+//     const token = await clerkClient.users.getUserOauthAccessToken(user_id.subject, "google");
+//     if (token.data.length === 0 || token.data[0].token == null) {
+//       return
+//     }
+//     client.setCredentials({
+//       access_token: token.data[0].token,
+//     });
+//     const channelId = uuidv4();
+//     const response = await google.calendar("v3").events.watch({
+//       calendarId: "primary",
+//       requestBody: {
+//         id: channelId,
+//         type: "web_hook",
+//         address: "https://original-peccary-306.convex.site/google-notifications", 
+//       },
+//       auth: client,
+//     });
+//     if (response.status != 200) {
+//       throw new ConvexError("Failed to create watch channel");
+//     }
+    
+//     console.log("Watch response:", response.data);
+//     // Store the channel ID and resource ID in your database for later use
+   
+//     return response.data;
+//   // Store the channel ID and resource ID in your database for later use
+
+//   }
+// })
+
+// export const createWatchChannel = internalMutation({
+//   args: {
+//     channelId: v.string(), // You generate this
+//     resourceId: v.string(), // Google returns this in webhook
+//     calendarId: v.string(),
+//     userId: v.string(), // Your app's user ID
+//   },
+//   handler: async (ctx, args) => {
+
+//     const now = Date.now();
+
+//     // Store in Convex
+//     await ctx.db.insert('calendarWatchChannels', {
+//       channelId: args.channelId,
+//       resourceId: args.resourceId,
+//       calendarId: args.calendarId,
+//       userId: args.userId,
+//       expiration: now + 7 * 24 * 60 * 60 * 1000, // 7 days (max allowed)
+//       createdAt: now,
+//     });
+
+//     return { channelId: args.channelId, resourceId: args.resourceId};
+//   },
+// })
+
+export const createWatchChannel = action({
+  handler: async (ctx) => {
+    const watchChannelExists = await ctx.runQuery(api.calendar.checkIfUserHasWatchChannel);
+    if (watchChannelExists) {
+      console.log("User already has a watch channel");
+      return;
+    }
+
+    const channelId = uuidv4();
+    const token = await ctx.runAction(internal.google.getAccessToken);
+    client.setCredentials({
+      access_token: token,
+    });
+    const response = await google.calendar("v3").events.watch({
+      calendarId: "primary",
+      requestBody: {
+        id: channelId,
+        type: "web_hook",
+        address: "https://original-peccary-306.convex.site/google-notifications", // Your webhook URL
+      },
+      auth: client,
+    });
+    if (response.status != 200) {
+      throw new ConvexError("Failed to create watch channel");
+    }
+    console.log("Watch response:", response.data);
+    
+    
+
+    // Store in Convex
+    await ctx.runMutation(internal.calendar.insertWatchChannel, {
+      channelId: channelId,
+      resourceId: response.data.resourceId!,
+      calendarId: "primary",
+
+    });
+
+  }
+})
+
+
+
