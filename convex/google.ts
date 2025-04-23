@@ -14,7 +14,7 @@ const client = new google.auth.OAuth2(
 
 export const getAccessToken = internalAction({
   handler: async (ctx) => {
-    const user_id = await ctx.auth.getUserIdentity();
+    const user_id = await ctx.auth.getUserIdentity(); //GetUserIdentity
     if (!user_id) {
       console.log("User id is null :(")
       return;
