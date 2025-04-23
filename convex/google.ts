@@ -1,9 +1,10 @@
 "use node";
 import { v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { action, internalAction, internalMutation, mutation } from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
-import { internal } from "./_generated/api";
+import { api, internal } from "./_generated/api";
+import { ConvexError } from "convex/values";
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_OAUTH_CLIENT_ID,
@@ -115,7 +116,7 @@ export const createGoogleCalendarEvent = action({
     }),
     userId: v.any(),
   },
-  handler: async (_, args) => {
+  handler: async (ctx, args) => {
   
 
     let param_user_id = '';
@@ -132,10 +133,6 @@ export const createGoogleCalendarEvent = action({
     const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
     const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
 
-
-
-
-
     client.setCredentials({
       access_token: token.data[0].token,
     });
@@ -150,6 +147,34 @@ export const createGoogleCalendarEvent = action({
       requestBody: args.event,
       auth: client,
     });
+
+    const user = await ctx.runQuery(api.users.getUserByClerkId, {
+      clerkId: param_user_id,
+    });
+
+    if (!user) {  
+      throw new ConvexError({
+          code: 404,
+          message: "User not found",
+      });
+    }
+
+    await ctx.runMutation(internal.google.storeCalendarEvent, {
+      userId: user._id,
+      event: {
+        calendarId: "primary",
+        eventId: response.data.id!,
+        summary: response.data.summary ?? "",
+        description: response.data.description ?? "",
+        location: response.data.location ?? "",
+        colorId: response.data.colorId ?? "",
+        start: response.data.start,
+        end: response.data.end,
+        recurrence: response.data.recurrence ?? [],
+        updated: response.data.updated ?? new Date().toISOString(),
+      },
+    });
+    
 
 
     return response.data;
@@ -172,7 +197,7 @@ export const updateGoogleCalendarEvent = action({
       })),
     })
   },
-  handler: async (_, args) => {
+  handler: async (ctx, args) => {
     let param_user_id = '';
 
     if (typeof args.userId === 'string') {
@@ -200,6 +225,33 @@ export const updateGoogleCalendarEvent = action({
       auth: client,
     });
 
+    const user = await ctx.runQuery(api.users.getUserByClerkId, {
+      clerkId: param_user_id,
+    });
+
+    if (!user) {  
+      throw new ConvexError({
+          code: 404,
+          message: "User not found",
+      });
+    }
+
+    await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
+      userId: user._id,
+      event: {
+        calendarId: "primary",
+        eventId: response.data.id!,
+        summary: response.data.summary ?? "",
+        description: response.data.description ?? "",
+        location: response.data.location ?? "",
+        colorId: response.data.colorId ?? "",
+        start: response.data.start,
+        end: response.data.end,
+        recurrence: response.data.recurrence ?? [],
+        updated: response.data.updated ?? new Date().toISOString(),
+      },
+    });
+
     return response.data;
   }
 });
@@ -209,7 +261,7 @@ export const deleteGoogleCalendarEvent = action({
     eventId: v.string(),
     userId: v.any(),
   },
-  handler: async (_, args) => {
+  handler: async (ctx, args) => {
     let param_user_id = '';
 
     if (typeof args.userId === 'string') {
@@ -229,6 +281,27 @@ export const deleteGoogleCalendarEvent = action({
       eventId: args.eventId,
       auth: client,
     });
+
+    const user = await ctx.runQuery(api.users.getUserByClerkId, {
+      clerkId: param_user_id,
+    });
+
+    if (!user) {  
+      throw new ConvexError({
+          code: 404,
+          message: "User not found",
+      });
+    }
+
+    await ctx.runMutation(api.calenderEvents.del, {
+      userId: user._id,
+      eventId: args.eventId,
+    });
+
+
     return response.data;
+    
   }
 });
+
+

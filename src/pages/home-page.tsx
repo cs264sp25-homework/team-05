@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import Calendar from "@/components/Calendar";
 import { motion } from "framer-motion";
 import { Calendar as CalendarIcon, MessageSquare, Users, Brain, Clock, CheckCircle } from "lucide-react";
+import { PostSignInSync } from "@/components/PostSignInSync";
 
 const HomePage: React.FC = () => {
   const { navigate } = useRouter();
@@ -45,6 +46,7 @@ const HomePage: React.FC = () => {
   return (
     <div className="min-h-svh bg-gradient-to-b from-gray-50 to-white">
       <Authenticated>
+        <PostSignInSync />
         <div className="w-full max-w-7xl mx-auto p-4">
           <div className="flex justify-between items-center mb-4">
             <Button onClick={() => navigate("chats")} className="bg-blue-600 hover:bg-blue-700">
