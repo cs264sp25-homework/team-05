@@ -22,7 +22,15 @@ const schema = defineSchema({
     clerkId: v.string(),
     email: v.string(),
     userIdconvex: v.string(),
-  }).index("by_clerkId", ["clerkId"]),
+    emailVerificationTime: v.optional(v.float64()),
+    image: v.optional(v.string()),
+    isAnonymous: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.float64()),
+  }).index("by_clerkId", ["clerkId"])
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 
   calendar: defineTable({
     userId: v.id("users"),
@@ -30,7 +38,6 @@ const schema = defineSchema({
     summary: v.string(),
     description: v.optional(v.string()),
     timeZone: v.optional(v.string()),
-    accessRole: v.optional(v.string()),
   }).index("by_userId", ["userId"])
     .index("by_calendarId", ["calendarId"]),
 
@@ -38,15 +45,19 @@ const schema = defineSchema({
     userId: v.id("users"),
     calendarId: v.id("calendar"),
     eventId: v.string(),
+    created: v.string(),
+    updated: v.optional(v.string()),
     summary: v.string(),
     description: v.optional(v.string()),
     location: v.optional(v.string()),
       colorId: v.optional(v.string()),
       start: v.object({
+        date: v.optional(v.string()),
         dateTime: v.string(),
         timeZone: v.optional(v.string()),
       }),
       end: v.object({
+        date: v.optional(v.string()),
         dateTime: v.string(),
         timeZone: v.optional(v.string()),
       }),
