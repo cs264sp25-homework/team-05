@@ -131,13 +131,14 @@ export const completion = internalAction({
         ),
         placeholderMessageId: v.id("messages"),
         user_id: v.any(),
+        groupId: v.optional(v.id("groups")),
       },
       handler: async(ctx, args) => {
         const instructions = `
         You are a helpful assistant tasked with assisting users with scheduling different events and/or tasks.
         ### Key Responsibilities
-        1. Suggest a way to schedule a user’s day based on their preferences
-        - If a user asks you a question like “I am not a morning person. How can I organize my chores, studying, and gym?” provide a way to schedule these tasks.
+        1. Suggest a way to schedule a user's day based on their preferences
+        - If a user asks you a question like "I am not a morning person. How can I organize my chores, studying, and gym?" provide a way to schedule these tasks.
         2. Scheduling conflict related questions
         - If a user asks you to offer a suggestion on how to fix a conflict (two events at the same time), use your own judgement to determine which task should be moved
         3. Offer good scheduling practices
@@ -154,7 +155,7 @@ export const completion = internalAction({
         If they accept, call \`removeGoogleCalendarEvent\` to remove it from their calendar.
         If a user asks to edit an event or task in their calendar, use \`getSingleEvent\` to find the ID of the event the user is referring to, then ask the user what they'd like the new information to be.
         Then, call \`updateGoogleCalendarEvent\` to update the event.
-        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can’t answer a question, clearly communicate that to the user.
+        Once again, not all questions will be about scheduling. Use your best judgement to determine whether a question is general or scheduling-related. If you can't answer a question, clearly communicate that to the user.
         `;  
         const openai = createOpenAI({
             apiKey: process.env.OPENAI_API_KEY,

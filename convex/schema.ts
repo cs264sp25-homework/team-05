@@ -33,6 +33,25 @@ const schema = defineSchema({
     .index("email", ["email"])
     .index("phone", ["phone"]),
 
+  groups: defineTable({
+    name: v.string(),
+    description: v.optional(v.string()),
+    createdBy: v.string(), // userId
+    inviteCode: v.string(),
+    chatId: v.optional(v.id("chats")), // Reference to the group's chat
+    createdAt: v.number(), // timestamp
+  }).index("by_invite_code", ["inviteCode"]),
+
+  groupMembers: defineTable({
+    groupId: v.id("groups"),
+    userId: v.string(),
+    role: v.union(v.literal("admin"), v.literal("member")),
+    joinedAt: v.number(), // timestamp
+  })
+  .index("by_group", ["groupId"])
+  .index("by_user", ["userId"])
+  .index("by_group_and_user", ["groupId", "userId"]),
+
   calendar: defineTable({
     userId: v.id("users"),
     calendarId: v.string(),
@@ -51,30 +70,30 @@ const schema = defineSchema({
     summary: v.string(),
     description: v.optional(v.string()),
     location: v.optional(v.string()),
-      colorId: v.optional(v.string()),
-      start: v.object({
-        date: v.optional(v.string()),
-        dateTime: v.string(),
-        timeZone: v.optional(v.string()),
-      }),
-      end: v.object({
-        date: v.optional(v.string()),
-        dateTime: v.string(),
-        timeZone: v.optional(v.string()),
-      }),
-      recurrence: v.optional(v.array(v.string())),
-      reminders: v.optional(v.object({
-        useDefault: v.boolean(),
-        overrides: v.optional(v.array(v.object({
-          method: v.string(),
-          minutes: v.number(),
-          }))),
-        })),
-      })
-    .index("by_userId", ["userId"])
-    .index("by_calendarId", ["calendarId"])
-    .index("by_eventId", ["eventId", "calendarId"])
-    .index("by_userId_eventId", ["userId", "eventId"]),
+    colorId: v.optional(v.string()),
+    start: v.object({
+      date: v.optional(v.string()),
+      dateTime: v.string(),
+      timeZone: v.optional(v.string()),
+    }),
+    end: v.object({
+      date: v.optional(v.string()),
+      dateTime: v.string(),
+      timeZone: v.optional(v.string()),
+    }),
+    recurrence: v.optional(v.array(v.string())),
+    reminders: v.optional(v.object({
+      useDefault: v.boolean(),
+      overrides: v.optional(v.array(v.object({
+        method: v.string(),
+        minutes: v.number(),
+      }))),
+    })),
+  })
+  .index("by_userId", ["userId"])
+  .index("by_calendarId", ["calendarId"])
+  .index("by_eventId", ["eventId", "calendarId"])
+  .index("by_userId_eventId", ["userId", "eventId"]),
 });
  
 export default schema;
