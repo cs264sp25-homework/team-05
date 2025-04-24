@@ -18,23 +18,63 @@ const schema = defineSchema({
     role: v.union(v.literal("user"), v.literal("assistant")),
     groupId: v.optional(v.id("groups")), // Store the groupId as a proper ID reference
   }).index("by_chat_id", ["chatId"]),
-  groups: defineTable({
-    name: v.string(),
+
+  users: defineTable({
+    clerkId: v.string(),
+    email: v.string(),
+    userIdconvex: v.string(),
+    emailVerificationTime: v.optional(v.float64()),
+    image: v.optional(v.string()),
+    isAnonymous: v.optional(v.boolean()),
+    name: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.float64()),
+  }).index("by_clerkId", ["clerkId"])
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
+
+  calendar: defineTable({
+    userId: v.id("users"),
+    calendarId: v.string(),
+    summary: v.string(),
     description: v.optional(v.string()),
-    createdBy: v.string(), // userId
-    inviteCode: v.string(),
-    chatId: v.optional(v.id("chats")), // Reference to the group's chat
-    createdAt: v.number(), // timestamp
-  }).index("by_invite_code", ["inviteCode"]),
-  groupMembers: defineTable({
-    groupId: v.id("groups"),
-    userId: v.string(),
-    role: v.union(v.literal("admin"), v.literal("member")),
-    joinedAt: v.number(), // timestamp
-  })
-  .index("by_group", ["groupId"])
-  .index("by_user", ["userId"])
-  .index("by_group_and_user", ["groupId", "userId"]),
+    timeZone: v.optional(v.string()),
+  }).index("by_userId", ["userId"])
+    .index("by_calendarId", ["calendarId"]),
+
+  calendarEvents: defineTable({
+    userId: v.id("users"),
+    calendarId: v.id("calendar"),
+    eventId: v.string(),
+    created: v.string(),
+    updated: v.optional(v.string()),
+    summary: v.string(),
+    description: v.optional(v.string()),
+    location: v.optional(v.string()),
+      colorId: v.optional(v.string()),
+      start: v.object({
+        date: v.optional(v.string()),
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      end: v.object({
+        date: v.optional(v.string()),
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      recurrence: v.optional(v.array(v.string())),
+      reminders: v.optional(v.object({
+        useDefault: v.boolean(),
+        overrides: v.optional(v.array(v.object({
+          method: v.string(),
+          minutes: v.number(),
+          }))),
+        })),
+      })
+    .index("by_userId", ["userId"])
+    .index("by_calendarId", ["calendarId"])
+    .index("by_eventId", ["eventId", "calendarId"])
+    .index("by_userId_eventId", ["userId", "eventId"]),
 });
  
 export default schema;
