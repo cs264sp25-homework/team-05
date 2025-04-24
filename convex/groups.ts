@@ -226,6 +226,36 @@ export const getGroupMembers = query({
   },
 });
 
+// Internal version of getGroupMembers that doesn't require authentication
+// This is ONLY for internal actions/queries like openai.getGroupAvailability
+export const internalGetGroupMembers = internalQuery({
+  args: {
+    groupId: v.id("groups"),
+  },
+  handler: async (ctx, args) => {
+    // Get all members of the group
+    const members = await ctx.db
+      .query("groupMembers")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    const membersWithBasicInfo = members.map(member => {
+      return {
+        ...member,
+        name: member.userId.substring(0, 8),
+        email: "Email unavailable",
+        pictureUrl: null,
+        isCurrentUser: false
+      };
+    });
+
+    return {
+      members: membersWithBasicInfo,
+      currentUserRole: "internal"
+    };
+  },
+});
+
 // Action to fetch enriched group member profiles
 export const enrichGroupMemberProfiles = action({
   args: {
