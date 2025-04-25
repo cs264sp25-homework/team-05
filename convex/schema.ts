@@ -71,6 +71,7 @@ const schema = defineSchema({
   .index("by_calendarId", ["calendarId"])
   .index("by_eventId", ["eventId"])
   .index("by_userId_eventId", ["userId", "eventId"]),
+
 });
  
 export default schema;
