@@ -3,7 +3,6 @@ import { query, mutation } from "./_generated/server";
 
 export const getAll = query({
     handler: async (ctx) => {
-      console.log("Loading the chats........");
       return ctx.db.query("chats").collect();
     },
   });
