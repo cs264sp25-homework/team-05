@@ -3,6 +3,23 @@ import { mutation, query, action, internalQuery } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
+type NormalizedEvent = {
+  id: string | null | undefined,
+  summary: string,
+  start: {
+    dateTime: string,
+    isAllDay: boolean
+  },
+  end: {
+    dateTime: string,
+    isAllDay: boolean
+  },
+  status: string,
+  _normalized: boolean,
+  user?: string,
+  userId?: string,
+};
+
 // Generate a random invite code
 function generateInviteCode(): string {
   return Math.random().toString(36).substring(2, 15);
@@ -255,6 +272,95 @@ export const internalGetGroupMembers = internalQuery({
     };
   },
 });
+
+export const getGroupEvents = action({
+  args: {
+    startDate: v.string(),
+    endDate: v.string(),
+    groupId: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const groupMembersResponse = await ctx.runQuery(internal.groups.internalGetGroupMembers, {
+      groupId: args.groupId
+    });
+    if (!groupMembersResponse || !groupMembersResponse.members || groupMembersResponse.members.length === 0) {
+      console.error(`[ERROR] No members found in group ${args.groupId}`);
+      throw new Error("No members found in the group");
+    }
+    const events: NormalizedEvent[] = [];
+    const memberEvents = await Promise.all(groupMembersResponse.members.map(async (member) => {
+        const events = await ctx.runAction(api.google.listGoogleCalendarEvents,
+          {startDate: args.startDate, 
+            endDate: args.endDate,
+            userId: member.userId
+          })
+        return {
+          events: events,
+          userId: member.userId,
+          user: member.name,
+        }}
+        ));
+    memberEvents.forEach((member) => {
+      if (member) {
+      member.events.forEach((event: NormalizedEvent | null) => {
+          if (event) {
+            console.log(event)
+          events.push({
+            ...event,
+            userId: member.userId,
+            user: member.user,
+          })
+        }
+        })
+      }
+    })
+    return events;
+  }
+})
+
+export const createGroupEvent = action({
+  args: {
+    event: v.object({
+      summary: v.string(),
+      description: v.optional(v.string()),
+      location: v.optional(v.string()),
+      colorId: v.optional(v.string()),
+      start: v.object({
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      end: v.object({
+        dateTime: v.string(),
+        timeZone: v.optional(v.string()),
+      }),
+      recurrence: v.optional(v.array(v.string())), 
+      reminders: v.optional(v.object({
+        useDefault: v.boolean(),
+        overrides: v.optional(v.array(v.object({
+          method: v.string(),
+          minutes: v.number(),
+        }))),
+      })),
+    }),
+    groupId: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const groupMembersResponse = await ctx.runQuery(internal.groups.internalGetGroupMembers, {
+      groupId: args.groupId
+    });
+    if (!groupMembersResponse || !groupMembersResponse.members || groupMembersResponse.members.length === 0) {
+      console.error(`[ERROR] No members found in group ${args.groupId}`);
+      throw new Error("No members found in the group");
+    }
+    await Promise.all(groupMembersResponse.members.map(async (member) => {
+      console.log(`Scheduling for member ${member.userId}...`)
+        const result = await ctx.runAction(api.google.createGoogleCalendarEvent, {
+          event: args.event, 
+          userId: member.userId});
+        console.log(result);
+    }))
+  }
+})
 
 // Action to fetch enriched group member profiles
 export const enrichGroupMemberProfiles = action({

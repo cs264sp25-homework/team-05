@@ -144,12 +144,10 @@ export const create = mutation({
       messages: messages.map((message) => ({
         role: message.role,
         content: message.content,
-        groupId: message.groupId || args.groupId, // Ensure groupId is properly passed
       })).concat([{
         // Add the current message (which isn't in the DB query results yet)
         role: "user",
         content: args.content,
-        groupId: args.groupId
       }]),
       placeholderMessageId,
       user_id: user_id,

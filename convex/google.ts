@@ -492,12 +492,15 @@ interface MemberEvents {
 
 export const findGroupAvailability = action({
   args: {
-    groupId: v.id("groups"),
+    groupId: v.optional(v.id("groups")),
     startDate: v.string(),
     endDate: v.string(),
     duration: v.number(), // duration in minutes
   },
   handler: async (ctx, args) => {
+    if (!args.groupId) {
+      throw Error("Group ID not defined!")
+    }
     console.log(`[DEBUG] findGroupAvailability: Starting for group ${args.groupId}, duration ${args.duration} minutes`);
     console.log(`[DEBUG] Date range: ${args.startDate} to ${args.endDate}`);
     
@@ -725,8 +728,8 @@ export const findGroupAvailability = action({
     
     // Format the available slots for better display
     const formattedSlots = availableSlots.map(slot => ({
-      start: slot.start,
-      end: slot.end,
+      start: slot.start.toDateString(),
+      end: slot.end.toDateString(),
       displayTime: `${formatTime(slot.start)} - ${formatTime(slot.end)} on ${formatDay(slot.start)}`
     }));
 
