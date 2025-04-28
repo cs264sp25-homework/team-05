@@ -1,6 +1,5 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
 import "./index.css";
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
@@ -18,7 +17,6 @@ const router = createRouter({
   routeTree,
   defaultPreload: "intent",
   basepath: "/team-05",
-  notFoundComponent: () => <div>Page not found</div>
 });
 
 // Register the router instance for type safety

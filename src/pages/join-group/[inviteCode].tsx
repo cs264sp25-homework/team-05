@@ -48,7 +48,7 @@ const JoinGroupPage = () => {
             <Button
               className="mt-4"
               variant="outline"
-              onClick={() => navigate("/")}
+              onClick={() => navigate("home")}
             >
               Go to Home
             </Button>
@@ -81,7 +81,7 @@ const JoinGroupPage = () => {
             </div>
           ) : (
             <div className="flex justify-end gap-4">
-              <Button variant="outline" onClick={() => navigate("/")}>
+              <Button variant="outline" onClick={() => navigate("home")}>
                 Cancel
               </Button>
               <Button onClick={handleJoinGroup} disabled={isJoining}>

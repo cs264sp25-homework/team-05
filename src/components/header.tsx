@@ -2,13 +2,20 @@ import { cn } from "@/lib/utils";
 import { Calendar, Users, MessageSquare } from "lucide-react";
 import { useRouter } from "@/hooks/use-router";
 import { Button } from "./ui/button";
+import { Page } from "@/store/router";
 
 const DEBUG = false;
+
+interface NavItem {
+  icon: any,
+  label: string,
+  route: Page,
+}
 
 const Header: React.FC = () => {
   const { navigate, currentRoute } = useRouter();
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       icon: <Calendar className="w-5 h-5" />,
       label: "Calendar",

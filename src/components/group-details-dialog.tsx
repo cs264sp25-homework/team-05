@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Trash2, UserMinus, Users, Mail, Link as LinkIcon, Shield, X } from "lucide-react";
+import { Trash2, UserMinus, Mail, Link as LinkIcon, X } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
@@ -38,6 +38,22 @@ interface GroupDetailsDialogProps {
   groupInviteCode?: string;
 }
 
+interface Member {
+  userId: string;
+  groupId: Id<"groups">;
+  role: string;
+  joinedAt: number;
+  name: string;
+  email: string;
+  pictureUrl: string | null;
+  isCurrentUser: boolean;
+}
+
+interface Members { 
+  members: Member[];
+  currentUserRole: string;
+}
+
 const GroupDetailsDialog = ({
   groupId,
   open,
@@ -48,10 +64,10 @@ const GroupDetailsDialog = ({
   groupInviteCode,
 }: GroupDetailsDialogProps) => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
   const [isLeaveGroupAlertOpen, setIsLeaveGroupAlertOpen] = useState(false);
+  const [membersWithProfiles, setMembersWithProfiles] = useState<Members|null>(null);
   
   // First get basic member info
   const groupMembersResult = useQuery(api.groups.getGroupMembers, 
@@ -59,9 +75,9 @@ const GroupDetailsDialog = ({
   );
   
   // Then use action to get enriched profiles
-  const enrichProfiles = useAction(api.groups.enrichGroupMemberProfiles);
+  const enrichProfiles = useAction(api.groups.enrichGroupMemberProfiles)
   
-  const [membersWithProfiles, setMembersWithProfiles] = useState(null);
+
   const currentUserRole = membersWithProfiles?.currentUserRole || groupMembersResult?.currentUserRole;
   const members = membersWithProfiles?.members || groupMembersResult?.members || [];
   
@@ -71,7 +87,7 @@ const GroupDetailsDialog = ({
       if (groupId && open && groupMembersResult) {
         setIsLoadingProfiles(true);
         try {
-          const enrichedData = await enrichProfiles({ groupId });
+          const enrichedData = await enrichProfiles({groupId});
           setMembersWithProfiles(enrichedData);
         } catch (error) {
           toast.error("Failed to load complete member profiles");
@@ -95,7 +111,7 @@ const GroupDetailsDialog = ({
     try {
       await removeMember({ groupId, userId });
       toast.success("Member removed successfully");
-      setMemberToRemove(null);
+
       // Force refresh of member list
       setLoadAttempt(prev => prev + 1);
     } catch (error: any) {

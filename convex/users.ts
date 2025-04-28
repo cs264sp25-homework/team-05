@@ -2,7 +2,6 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { createClerkClient } from '@clerk/backend';
-import { paginationOptsValidator } from "convex/server";
 
 // Log helper for debugging
 const logData = (prefix: string, data: any) => {
@@ -13,7 +12,7 @@ const logData = (prefix: string, data: any) => {
 // Fetch user details from Clerk using the Admin API
 export const getUserDetails = internalAction({
   args: { userId: v.string() },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     try {
       // Create Clerk client with admin API key
       const clerkClient = createClerkClient({ 
@@ -69,7 +68,7 @@ export const getUserProfiles = internalAction({
   args: { 
     userIds: v.array(v.string()) 
   },
-  handler: async (ctx, args) => {
+  handler: async (_, args) => {
     try {
       console.log(`[DEBUG] Fetching profiles for ${args.userIds.length} users:`, args.userIds);
       

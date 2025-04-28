@@ -1,4 +1,4 @@
-import { Route } from "@tanstack/react-router";
+import { Route, useParams } from "@tanstack/react-router";
 import { rootRoute } from "./root";
 import HomePage from "./pages/home-page";
 import ListChatsPage from "./pages/chats/list-chats-page";
@@ -46,20 +46,21 @@ export const addChatRoute = new Route({
 export const editChatRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/chats/$chatId/edit",
-  component: () => (
-    <Layout
+  component: () => {
+    const {chatId} = useParams({strict: false})
+    return <Layout
       leftPanelContent={<ListChatsPage />}
-      middlePanelContent={<EditChatPage />}
+      middlePanelContent={<EditChatPage chatId={chatId ?? ""} />}
       rightPanelContent={<Calendar />}
     />
-  ),
+},
 });
 
 export const chatMessagesRoute = new Route({
   getParentRoute: () => rootRoute,
   path: "/chats/$chatId/messages",
   component: () => (
-    <Layout
+      <Layout
       leftPanelContent={<ListChatsPage />}
       middlePanelContent={<ChatMessagesPage />}
       rightPanelContent={<Calendar />}

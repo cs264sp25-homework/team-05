@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "@/hooks/use-router";
+import { Id } from "@/../convex/_generated/dataModel";
+
 
 const ChatMessagesPage = () => {
   const { params } = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const chatId = params.chatId as string;
+  const chatId = params.chatId as Id<"chats">;
 
   const chat = useQuery(api.chats.get, { chatId });
   const messages = useQuery(api.messages.getMessages, {
@@ -38,7 +40,9 @@ const ChatMessagesPage = () => {
         chatId,
         content,
       });
-      inputRef.current.value = "";
+      if (inputRef.current != null) {
+        inputRef.current.value = "";
+      }
     } catch (error) {
       toast.error("Failed to send message. Please try again.");
     }

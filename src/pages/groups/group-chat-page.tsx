@@ -48,11 +48,6 @@ const GroupChatPage = () => {
     api.messages.getMessages,
     group?.chatId ? { chatId: group.chatId } : "skip"
   );
-
-   const members = useQuery(
-     api.groups.getGroupMembers,
-     groupId ? { groupId } : "skip"
-   )
   
   const sendMessage = useMutation(api.messages.sendMessage);
 
@@ -103,8 +98,9 @@ const GroupChatPage = () => {
         content,
         groupId, // Pass groupId for group context
       });
-      
-      inputRef.current.value = "";
+      if (inputRef.current != null) {
+        inputRef.current.value = "";
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error("Failed to send message. Please try again.");

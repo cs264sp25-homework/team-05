@@ -1,6 +1,6 @@
 "use node";
 import { v } from "convex/values";
-import { action, internalAction, query } from "./_generated/server";
+import { action, internalAction } from "./_generated/server";
 import { google } from "googleapis";
 import { createClerkClient } from '@clerk/backend'
 import { internal, api } from "./_generated/api";
@@ -472,23 +472,18 @@ interface GroupMember {
 }
 
 // Define interface for calendar event
-interface CalendarEvent {
-  start: {
-    dateTime?: string;
-    date?: string;
-  };
-  end: {
-    dateTime?: string;
-    date?: string;
-  };
-  [key: string]: any;
-}
+// interface CalendarEvent {
+//   start: {
+//     dateTime?: string;
+//     date?: string;
+//   };
+//   end: {
+//     dateTime?: string;
+//     date?: string;
+//   };
+//   [key: string]: any;
+// }
 
-// Define interface for member events
-interface MemberEvents {
-  userId: string;
-  events: CalendarEvent[];
-}
 
 export const findGroupAvailability = action({
   args: {
