@@ -232,3 +232,43 @@ export const deleteGoogleCalendarEvent = action({
     return response.data;
   }
 });
+
+export async function createEventHelper (args: any) {
+  let param_user_id = '';
+
+    if (typeof args.userId === 'string') {
+      param_user_id = args.userId; 
+    } else {
+      param_user_id = args.userId.subject;
+    }
+    
+
+    // const token = await ctx.runAction(internal.google.getAccessToken);
+
+    const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+    const token = await clerkClient.users.getUserOauthAccessToken(param_user_id, "google");
+
+
+
+
+
+    client.setCredentials({
+      access_token: token.data[0].token,
+    });
+
+
+    args.event.start.dateTime = new Date(args.event.start.dateTime).toISOString(); // Ensure the start date is in ISO format
+    args.event.end.dateTime = new Date(args.event.end.dateTime).toISOString(); // Ensure the end date is in ISO format
+    
+    
+    const response = await google.calendar("v3").events.insert({
+      calendarId: "primary",
+      requestBody: args.event,
+      auth: client,
+    });
+
+    console.log("Response was generated. back to you");
+
+
+    return response.data;
+}

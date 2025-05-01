@@ -51,6 +51,7 @@ const EditChatPage: React.FC<EditChatPageProps> = ({ chatId }) => {
   const initialValues = {
     title: chat.title || "",
     description: chat.description ?? undefined,
+    assistantId: chat.assistantId || "default",
   };
 
   return (
