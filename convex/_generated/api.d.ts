@@ -19,6 +19,7 @@ import type * as auth from "../auth.js";
 import type * as calendarEvents from "../calendarEvents.js";
 import type * as chats from "../chats.js";
 import type * as google from "../google.js";
+import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as openai from "../openai.js";
@@ -39,6 +40,7 @@ declare const fullApi: ApiFromModules<{
   calendarEvents: typeof calendarEvents;
   chats: typeof chats;
   google: typeof google;
+  groups: typeof groups;
   http: typeof http;
   messages: typeof messages;
   openai: typeof openai;
