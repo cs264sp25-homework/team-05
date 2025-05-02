@@ -10,14 +10,17 @@ const schema = defineSchema({
     description: v.optional(v.string()),
     messageCount: v.number(),
     pageCount: v.number(),
+    userId: v.optional(v.string()),
     groupId: v.optional(v.string()),
-  }),
+  }).index("by_user_id", ["userId"])
+  .index("by_group_id", ["groupId"]),
   messages: defineTable({
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
     groupId: v.optional(v.id("groups")), // Store the groupId as a proper ID reference
-  }).index("by_chat_id", ["chatId"]),
+  }).index("by_chat_id", ["chatId"])
+  .index("by_group_id", ["groupId"]),
 
   users: defineTable({
     clerkId: v.string(),
