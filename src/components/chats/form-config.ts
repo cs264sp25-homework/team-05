@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { createChatSchema } from "@/types/chat";
+import { AssistantIdDisplay, createChatSchema } from "@/types/chat";
 
 export const formSchema = createChatSchema;
 
@@ -9,7 +9,7 @@ export type FormField = {
   label: string;
   placeholder?: string;
   description?: string;
-  type: "text" | "textarea";
+  type: "text" | "textarea" | "assistant-select";
 };
 
 export const formFields: FormField[] = [
@@ -28,9 +28,16 @@ export const formFields: FormField[] = [
       "You can add a brief description for your chat. (Limit 200 characters)",
     type: "textarea",
   },
+  {
+    name: "assistantId",
+    label: "Assistant",
+    description: "Choose an assistant",
+    type: "assistant-select",
+  }
 ];
 
 export const defaultValues: z.infer<typeof formSchema> = {
   title: "",
   description: undefined,
+  assistantId: "default" as AssistantIdDisplay,
 };

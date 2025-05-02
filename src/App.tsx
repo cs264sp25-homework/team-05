@@ -8,6 +8,9 @@ import AddChatPage from "./pages/chats/add-chat-page";
 import EditChatPage from "./pages/chats/edit-chat-page";
 import MessagesPage from "./pages/messages/messages-page";
 import Calendar from "./components/Calendar";
+import ListAssistantsPage from "./pages/assistants/list-assistant-page";
+import AddAssistantPage from "./pages/assistants/add-assistant-page";
+import EditAssistantPage from "./pages/assistants/edit-assistant-page";
 
 
 function App() {
@@ -48,6 +51,26 @@ function App() {
           middle: <MessagesPage chatId={params.chatId as string} />,
           right: <Calendar />,
         };
+        case "assistants":
+          return {
+            left: <ListAssistantsPage/>,
+            middle: <Empty message="Select an assistant to view its messages." />,
+            right: null,
+          };
+        case "addAssistant":
+          return {
+            left: <ListChatsPage />,
+            middle: <AddAssistantPage />,
+            right: null,
+          };
+        case "editAssistant":
+          return {
+            left: <ListAssistantsPage />,
+            middle: (
+              <EditAssistantPage assistantId={params.assistantId as string} />
+            ),
+            right: null,
+          };  
       default:
         return {
           left: null,
