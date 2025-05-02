@@ -44,19 +44,15 @@ export const create = mutation({
       chatId: args.chatId,
       content: args.content,
       role: "user",
+      openaiMessageId: "pending",
     });
-
-    // Get all messages in the chat so far
-    const messages = await ctx.db
-      .query("messages")
-      .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
-      .collect();
 
     // Store a placeholder message for the assistant
     const placeholderMessageId = await ctx.db.insert("messages", {
       chatId: args.chatId,
       content: "...",
       role: "assistant",
+      openaiMessageId: "pending",
     });
 
     // Update the chat message count
@@ -64,19 +60,64 @@ export const create = mutation({
       messageCount: chat.messageCount + 2,
     });
 
-    const user_id = await ctx.auth.getUserIdentity();
+    if (chat.openaiThreadId) {
+      await ctx.scheduler.runAfter(0, internal.openai.createMessage, {
+        messageId,
+        openaiThreadId: chat.openaiThreadId,
+        content: args.content,
+        role: "user",
+      });
 
-    // Schedule an action that calls ChatGPT and updates the message.
-    ctx.scheduler.runAfter(0, internal.openai.completion, {
-      chatId: args.chatId as Id<"chats">,
-      messages: messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-      placeholderMessageId,
-      user_id: user_id,
-    });
+      if (chat.assistantId !== "default") {
+        // Get the assistant details
+        const assistant = await ctx.db.get(chat.assistantId);
+        if (!assistant) {
+          throw new ConvexError({
+            code: 404,
+            message: "Assistant not found",
+          });
+        }
 
+        const user = await ctx.auth.getUserIdentity();
+        if (!user) {
+          throw new ConvexError({
+            code: 404,
+            message: "User not found",
+          });
+        }
+
+
+        if (assistant.openaiAssistantId) {
+          // Start a streaming run with the assistant
+          ctx.scheduler.runAfter(0, internal.openai.streamRun, {
+            openaiThreadId: chat.openaiThreadId,
+            openaiAssistantId: assistant.openaiAssistantId,
+            placeholderMessageId,
+            userId: user.subject,
+          });
+        }
+      } else {
+        // Get all messages in the chat so far
+        const messages = await ctx.db
+        .query("messages")
+        .withIndex("by_chat_id", (q) => q.eq("chatId", args.chatId))
+        .collect();
+
+        const user_id = await ctx.auth.getUserIdentity();
+
+        // Schedule an action that calls ChatGPT and updates the message.
+        ctx.scheduler.runAfter(0, internal.openai.completion, {
+          chatId: args.chatId as Id<"chats">,
+          messages: messages.map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+          placeholderMessageId,
+          user_id: user_id,
+          openaiThreadId: chat.openaiThreadId,
+        });
+      }
+    }
     return messageId;
   },
 });
@@ -94,6 +135,19 @@ export const update = internalMutation({
       });
     },
   });
+
+// Internal mutation to update the OpenAI message ID
+export const updateOpenAIMessageId = internalMutation({
+  args: {
+    messageId: v.id("messages"),
+    openaiMessageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.messageId, {
+      openaiMessageId: args.openaiMessageId,
+    });
+  },
+});
 
 
   

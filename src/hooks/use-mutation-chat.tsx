@@ -12,6 +12,12 @@ export function useMutationChat(chatId: string) {
     try {
       await updateMutation({
         ...chat,
+        assistantId:
+          chat.assistantId === undefined
+            ? undefined
+            : chat.assistantId === "default"
+            ? "default"
+            : (chat.assistantId as Id<"assistants">),
         chatId: chatId as Id<"chats">,
       });
       return true;

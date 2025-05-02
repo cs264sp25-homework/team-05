@@ -33,4 +33,5 @@ export const formFields: FormField[] = [
 export const defaultValues: z.infer<typeof formSchema> = {
   title: "",
   description: undefined,
+  assistantId: "default",
 };
