@@ -12,6 +12,7 @@ export function useMutationAssistants() {
     try {
       const assistantId = await createMutation({
         ...assistant,
+        owner: "default",
       });
       toast.success("Assistant created successfully");
       return assistantId as string;

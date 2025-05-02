@@ -20,6 +20,7 @@ export function useMutationAssistant(assistantId: string) {
         instructions: assistant.instructions as string,
         model: assistant.model as string,
         numWeeks: (assistant.numWeeks ?? 1) as 1 | 2, 
+        owner: assistant.owner as string,
       });
       toast.success("Assistant updated successfully");
       return true;

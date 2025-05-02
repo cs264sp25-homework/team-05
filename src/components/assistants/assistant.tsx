@@ -49,13 +49,13 @@ const Assistant: React.FC<Partial<AssistantType>> = ({
   const [items, setItems] = useState<string[]>([]);
 
   useEffect(() => {
-    console.log("in the useeffect");
+    // console.log("in the useeffect");
     if (authorizedEmails && currentEmail) {
       console.log("in the if ");
       const authorizedEmailsFiltered = (authorizedEmails).filter((email) => email !== currentEmail);
       setItems(authorizedEmailsFiltered);
     }
-  }, [authorizedEmails, currentEmail]);
+  }, [currentEmail]);
 
   const handleAddItem = () => {
     if (newItem.trim() === "") return;

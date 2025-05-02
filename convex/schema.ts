@@ -28,6 +28,7 @@ export const assistantSchema = {
   tools: v.optional(v.array(toolSchema)),
   numWeeks: v.union(v.literal(1), v.literal(2)),
   nextWeeksEvents: v.optional(v.any()),
+  owner: v.string(),
 }
 
 export const assistantAccessSchema = {

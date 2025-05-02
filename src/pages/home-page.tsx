@@ -1,5 +1,4 @@
 import { SignInButton, UserButton } from "@clerk/clerk-react";
-import { Authenticated, Unauthenticated } from "convex/react";
 import { useRouter } from "@/hooks/use-router";
 import { Button } from "@/components/ui/button";
 import Calendar from "@/components/Calendar";
