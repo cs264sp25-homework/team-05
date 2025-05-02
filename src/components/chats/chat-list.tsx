@@ -21,7 +21,7 @@ const ChatList: React.FC = () => {
   return (
     <div aria-label="Chat list" className="flex flex-col gap-2">
       {chats &&
-        chats.map(({ _id, title, description, messageCount, pageCount }) => (
+        chats.map(({ _id, title, description, messageCount, pageCount, groupId }) => (
           <div key={_id} role="listitem">
             <Chat
               _id={_id}
@@ -29,6 +29,7 @@ const ChatList: React.FC = () => {
               description={description}
               messageCount={messageCount || 0}
               pageCount={pageCount || 0}
+              groupId={groupId}
             />
           </div>
         ))}

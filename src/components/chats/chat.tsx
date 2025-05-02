@@ -10,17 +10,35 @@ import { Edit, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "@/hooks/use-router";
+import { Id } from "../../../convex/_generated/dataModel";
 
 const DEBUG = false;
 
-const Chat: React.FC<Partial<ChatType>> = ({
+interface ChatProps extends Partial<ChatType> {
+  groupId?: string | Id<"groups">;
+}
+
+const Chat: React.FC<ChatProps> = ({
   _id,
   title,
   description,
   messageCount = 0,
   pageCount = 0,
+  groupId,
 }) => {
   const { navigate } = useRouter();
+
+  const handleNavigateToChat = () => {
+    if (groupId) {
+      console.log(`[DEBUG] Navigating to group chat for group ID: ${groupId}`);
+      navigate("groupChat", { groupId: String(groupId) });
+    } else if (_id) {
+      console.log(`[DEBUG] Navigating to regular chat for chat ID: ${_id}`);
+      navigate("messages", { chatId: _id });
+    } else {
+      console.error("[ERROR] Cannot navigate: Missing both groupId and _id");
+    }
+  };
 
   return (
     <AspectRatio
@@ -80,7 +98,7 @@ const Chat: React.FC<Partial<ChatType>> = ({
                 <Button
                   variant={"ghost"}
                   size={"icon"}
-                  onClick={() => navigate("messages", { chatId: _id })}
+                  onClick={handleNavigateToChat}
                 >
                   <MessageSquare className="h-4 w-4" />
                 </Button>
