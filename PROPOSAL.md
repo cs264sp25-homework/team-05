@@ -105,10 +105,13 @@ Deliverables:
 1. Create groups of people who need to meet as part of a team, giving access to each team member’s calendar to our chatbot to ask questions about the team’s availability.
     - The Chatbot will be prompt engineered to only share general information about a team member’s availability, and not anything private. 
 2. CRUD operations on groups,(adding, removing, and editing people)
+3. Create OpenAI assistant through the frontend.
+4. CRUD operations for assistants
 
 Deliverables:
 - Make and manage groups/teams
-- Allow the AI to add 
+- Allow the AI to add
+- Talk to assistants, who speak on behalf of user who created them. Will be made more robust in future weeks 
 
 #### Week 13
 1. Allow the AI bot to schedule group meetings, having the assistant read the schedules of multiple people in a group and suggesting a time to meet. If everyone accepts the suggestion, it will get added to their calendars.
@@ -120,6 +123,8 @@ Deliverables:
     - UI design to add tags to event/tasks
     - Database to store events/tasks by tags
     - Allow users to add, edit, delete tags
+4. Give access to assistants only to those who the user permits
+5. Start on giving assistant ability to add to schedule (no edit or remove)
 
 Deliverables:
 - Build foundation for Ollama and Gemini integration

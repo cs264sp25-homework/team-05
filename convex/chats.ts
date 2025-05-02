@@ -5,7 +5,6 @@ import { internal } from "./_generated/api";
 
 export const getAll = query({
     handler: async (ctx) => {
-      console.log("Loading the chats........");
       return ctx.db.query("chats").collect();
     },
   });
