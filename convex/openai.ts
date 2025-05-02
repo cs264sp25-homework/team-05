@@ -584,7 +584,7 @@ export const createMessage = internalAction({
 });
 
 // Function to handle tool calls
-export async function handleToolCalls(toolCalls: any[], userId: any) {
+export async function handleToolCalls(toolCalls: any[], userId: any, ownerId: any) {
   console.log("Handling the following tool calls in handleToolCalls:", toolCalls);
   const results = [];
 
@@ -607,6 +607,16 @@ export async function handleToolCalls(toolCalls: any[], userId: any) {
           tool_call_id: toolCall.id,
           output: JSON.stringify(googleResponse),
         })
+
+        const ownerResponse = await googleHelper.createEventHelper({
+          event: args,
+          userId: ownerId,
+        })
+        console.log("Google Calendar event created in handle for owner:", ownerResponse);
+        // results.push({
+        //   tool_call_id: toolCall.id,
+        //   output: JSON.stringify(ownerResponse),
+        // })
         // console.log(`🔍 Getting location information for ${args.city}...`);
         // const result = await getLocation(args.city);
         // console.log(`📍 Found location: ${JSON.stringify(result)}`);
@@ -629,6 +639,7 @@ export const streamRun = internalAction({
     openaiAssistantId: v.string(),
     placeholderMessageId: v.id("messages"),
     userId: v.any(),
+    ownerId: v.any(),
   },
   handler: async (ctx, args) => {
     try {
@@ -641,6 +652,8 @@ export const streamRun = internalAction({
       let run = openai.beta.threads.runs.stream(args.openaiThreadId, {
         assistant_id: args.openaiAssistantId,
       });
+
+      
       
       console.log("Starting stream run");
 
@@ -874,7 +887,7 @@ export const streamRun = internalAction({
       }
       
       if (tool_calls) {
-        let tool_outputs = await handleToolCalls(tool_calls, args.userId);
+        let tool_outputs = await handleToolCalls(tool_calls, args.userId, args.ownerId);
         console.log("The tool outputs", tool_outputs);
         let submittedRun = await openai.beta.threads.runs.submitToolOutputs(
           args.openaiThreadId,

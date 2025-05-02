@@ -104,6 +104,18 @@ export const create = mutation({
       Here are the user's next week's events: ${JSON.stringify(args.nextWeeksEvents)} that you will use to help schedule things on their behalf.
       `
 
+      // Grab the current users tokenIdentifier from users table
+      // give access to the assistant to the user
+      const identity = await ctx.auth.getUserIdentity();
+
+      if (!identity) {
+          throw new ConvexError({
+              code: 404,
+              message: "Identity in createAssistant is null",
+          });
+      }
+
+
         const assistantId = await ctx.db.insert("assistants", {
             name: args.name,
             description: args.description,
@@ -114,6 +126,7 @@ export const create = mutation({
             metadata: args.metadata || {},
             openaiAssistantId: "pending",
             numWeeks: args.numWeeks || 1,
+            owner: identity.subject,
         });
 
         await ctx.scheduler.runAfter(0, internal.openai.createAssistant, {
@@ -122,15 +135,7 @@ export const create = mutation({
             alternateInstructions: instructions,
         });
 
-        // give access to the assistant to the user
-        const identity = await ctx.auth.getUserIdentity();
 
-        if (!identity) {
-            throw new ConvexError({
-                code: 404,
-                message: "Identity in createAssistant is null",
-            });
-        }
 
         await ctx.runMutation(api.assistant_access.giveAccess, {
             assistantId,

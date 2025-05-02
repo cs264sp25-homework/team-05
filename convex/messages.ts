@@ -86,6 +86,8 @@ export const create = mutation({
           });
         }
 
+        
+
 
         if (assistant.openaiAssistantId) {
           // Start a streaming run with the assistant
@@ -94,6 +96,7 @@ export const create = mutation({
             openaiAssistantId: assistant.openaiAssistantId,
             placeholderMessageId,
             userId: user.subject,
+            ownerId: assistant.owner,
           });
         }
       } else {
