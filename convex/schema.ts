@@ -1,6 +1,44 @@
 import { defineSchema, defineTable } from "convex/server";
 import { authTables } from "@convex-dev/auth/server";
-import { v } from "convex/values";
+import { Infer, v } from "convex/values";
+
+const toolType = v.union(
+  v.literal("file_search"),
+  v.literal("code_interpreter"),
+  v.literal("function"),
+);
+
+export const toolSchema = v.object({
+  type: toolType,
+});
+
+export const assistantIdType = v.union(
+  v.literal("default"),
+  v.id("assistants")
+);
+
+export const assistantSchema = {
+  name: v.string(),
+  description: v.optional(v.string()),
+  instructions: v.string(),
+  model: v.string(),
+  temperature: v.optional(v.number()),
+  openaiAssistantId: v.optional(v.string()),
+  metadata: v.optional(v.record(v.string(), v.string())),
+  tools: v.optional(v.array(toolSchema)),
+  numWeeks: v.union(v.literal(1), v.literal(2)),
+  nextWeeksEvents: v.optional(v.any()),
+  owner: v.string(),
+}
+
+export const assistantAccessSchema = {
+  assistantId: v.id("assistants"),
+  userId: v.id("users"),
+  isOwner: v.boolean(),
+}
+
+const assistantSchemaObject = v.object(assistantSchema);
+export type Assistant = Infer<typeof assistantSchemaObject>;
  
 const schema = defineSchema({
   ...authTables,
@@ -10,6 +48,8 @@ const schema = defineSchema({
     description: v.optional(v.string()),
     messageCount: v.number(),
     pageCount: v.number(),
+    openaiThreadId: v.optional(v.string()),
+    assistantId: assistantIdType,
     userId: v.optional(v.string()),
     groupId: v.optional(v.string()),
   }).index("by_user_id", ["userId"])
@@ -18,21 +58,21 @@ const schema = defineSchema({
     chatId: v.id("chats"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
-    groupId: v.optional(v.id("groups")), // Store the groupId as a proper ID reference
+    openaiMessageId: v.optional(v.string()),
+    groupId: v.optional(v.id("groups")),
   }).index("by_chat_id", ["chatId"])
-  .index("by_group_id", ["groupId"]),
+    .index("by_group_id", ["groupId"]),
+  assistants: defineTable(assistantSchema).index("by_name", ["name"]),
+  assistant_access: defineTable(assistantAccessSchema).index("by_assistant_id", ["assistantId"]),
 
   users: defineTable({
-    clerkId: v.string(),
     email: v.string(),
-    userIdconvex: v.string(),
-    emailVerificationTime: v.optional(v.float64()),
+    tokenIdentifier: v.string(), //from getUserIdentity
     image: v.optional(v.string()),
     isAnonymous: v.optional(v.boolean()),
     name: v.optional(v.string()),
     phone: v.optional(v.string()),
-    phoneVerificationTime: v.optional(v.float64()),
-  }).index("by_clerkId", ["clerkId"])
+  }).index("by_token", ["tokenIdentifier"])
     .index("email", ["email"])
     .index("phone", ["phone"]),
 
@@ -57,7 +97,7 @@ const schema = defineSchema({
 
   calendar: defineTable({
     userId: v.id("users"),
-    calendarId: v.string(),
+    calendarId: v.string(), 
     summary: v.string(),
     description: v.optional(v.string()),
     timeZone: v.optional(v.string()),
@@ -66,11 +106,12 @@ const schema = defineSchema({
 
   calendarEvents: defineTable({
     userId: v.id("users"),
-    calendarId: v.id("calendar"),
-    eventId: v.string(),
+    calendarId: v.optional(v.union(v.literal("primary"), v.id('calendar'))), //iCalUID //v.id(calendar)
+    eventId: v.string(), //id (google)
     created: v.string(),
     updated: v.optional(v.string()),
     summary: v.string(),
+    htmlLink: v.optional(v.string()),
     description: v.optional(v.string()),
     location: v.optional(v.string()),
     colorId: v.optional(v.string()),

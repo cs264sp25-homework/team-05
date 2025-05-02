@@ -1,16 +1,19 @@
-import ChatList from "@/components/chats/chat-list";
+
+import AssistantList from "@/components/assistants/assistant-list";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "@/hooks/use-router";
 import { cn } from "@/lib/utils";
-import { HandHelping, PlusCircle } from "lucide-react";
+import { Authenticated } from "convex/react";
+import { MessageCircle, PlusCircle } from "lucide-react";
 
 const DEBUG = false;
 
-const ListChatsPage: React.FC = () => {
+const ListAssistantsPage: React.FC = () => {
   const { navigate } = useRouter();
 
   return (
+    <Authenticated>
     <ScrollArea
       className={cn("p-1 md:p-2 lg:p-4 h-full", {
         "border-2 border-red-500": DEBUG,
@@ -26,21 +29,28 @@ const ListChatsPage: React.FC = () => {
             "border-2 border-green-500": DEBUG,
           })}
         >
-          Chats
+          Assistants
         </h2>
-        <Button variant="outline" size="sm" onClick={() => navigate("addAssistant")}>
-          <HandHelping className="mr-2 h-4 w-4" />
-          Create Assistant
+        <Button
+        variant={"outline"}
+          size="sm"
+          onClick={() => navigate("chats")}>
+          <MessageCircle className="mr-2 h-4 w-4" />
+          Chat
         </Button>
-        <Button variant="outline" size="sm" onClick={() => navigate("addChat")}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("addAssistant")}
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
-          New Chat
+          New Assistant
         </Button>
-        
       </div>
-      <ChatList />
+      <AssistantList />
     </ScrollArea>
+    </Authenticated>
   );
 };
 
-export default ListChatsPage;
+export default ListAssistantsPage;

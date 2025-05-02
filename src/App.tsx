@@ -10,6 +10,9 @@ import GroupChatPage from "./pages/groups/group-chat-page";
 import { Toaster } from "sonner";
 import Layout from "./components/layout";
 import Calendar from "./components/Calendar";
+import ListAssistantsPage from "./pages/assistants/list-assistant-page";
+import AddAssistantPage from "./pages/assistants/add-assistant-page";
+import EditAssistantPage from "./pages/assistants/edit-assistant-page";
 import Empty from "./components/empty";
 import ChatMessagesPage from "./pages/chats/chat-messages-page";
 
@@ -41,6 +44,43 @@ export const addChatRoute = new Route({
       rightPanelContent={<Calendar />}
     />
   ),
+});
+
+export const assistantsRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/assistants",
+  component: () => {
+    return <Layout
+      leftPanelContent={<ListAssistantsPage/>}
+      middlePanelContent={<Empty message="Select an assistant to view its messages." />}
+      rightPanelContent={null}
+    />
+},
+});
+  
+export const addAssistantRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/assistants/add",
+  component: () => {
+    return <Layout
+      leftPanelContent={<ListChatsPage />}
+      middlePanelContent={<AddAssistantPage />}
+      rightPanelContent={null}
+    />
+},
+});
+  
+export const editAssistantRoute = new Route({
+  getParentRoute: () => rootRoute,
+  path: "/assistants/$assistantId/edit",
+  component: () => {
+    const {assistantId} = useParams({strict: false})
+    return <Layout
+      leftPanelContent={<ListAssistantsPage />}
+      middlePanelContent={<EditAssistantPage assistantId={params.assistantId as string} />}
+      rightPanelContent={null}
+    />
+},
 });
 
 export const editChatRoute = new Route({
@@ -107,6 +147,9 @@ export const routeTree = rootRoute.addChildren([
   groupsRoute,
   joinGroupRoute,
   groupChatRoute,
+  assistantsRoute,
+  addAssistantRoute,
+  editAssistantRoute,
 ]);
 
 function App() {

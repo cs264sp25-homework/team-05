@@ -23,6 +23,7 @@ export function useGoogleCalendar() {
 
   const { userId } = useAuth();
 
+  //TODO change this to fetch events from the database
   const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
   const createEvent = useAction(api.google.createGoogleCalendarEvent);
   const updateEventAction = useAction(api.google.updateGoogleCalendarEvent);

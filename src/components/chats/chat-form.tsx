@@ -19,6 +19,8 @@ import {
   formSchema,
   defaultValues,
 } from "./form-config";
+import AssistantDropdown from "../assistants/assistant-dropdown";
+import { AssistantIdDisplay } from "@/types/chat";
 
 interface ChatFormProps {
   onSubmit: (values: z.infer<typeof formSchema>) => void;
@@ -54,7 +56,15 @@ const ChatForm: React.FC<ChatFormProps> = ({
                 <FormLabel>{field.label}</FormLabel>
                 <FormDescription>{field.description}</FormDescription>
                 <FormControl>
-                  {field.type === "textarea" ? (
+                  {field.type === "assistant-select" ? (
+                    <AssistantDropdown
+                      value={
+                        (fieldProps.value as AssistantIdDisplay) ?? ("default" as AssistantIdDisplay)
+                      }
+                      onChange={fieldProps.onChange}
+                      className="w-full"
+                    />
+                  ) : field.type === "textarea" ? (
                     <Textarea
                       {...fieldProps}
                       value={fieldProps.value ?? ""}
