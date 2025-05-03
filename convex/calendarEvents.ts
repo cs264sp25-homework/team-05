@@ -94,13 +94,13 @@ export const bulkInsertCalendarEvent = mutation({
   },
   handler: async (ctx, args) => {
 
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      throw new ConvexError({
-        code: 401,
-        message: "User not authenticated",
-      });
-    }
+    // const user = await ctx.auth.getUserIdentity();
+    // if (!user) {
+    //   throw new ConvexError({
+    //     code: 401,
+    //     message: "User not authenticated",
+    //   });
+    // }
 
 
     const {events} = args;
@@ -206,5 +206,51 @@ export const getEvents = query({
       .withIndex("by_userId", (q) =>  q.eq("userId", user._id))
       .collect();
     
+  }
+})
+
+export const getWatchChannel = query({
+  args: {
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+
+    return await ctx.db.query("calendarWatchChannels")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .filter((q) => q.gte("expiration", new Date().toISOString()))
+      .first();
+  }
+})
+
+export const getWatchChannelByResourceId = query({
+  args: {
+    resourceId: v.string(),
+  },
+  handler: async (ctx, args) => {
+
+    return await ctx.db.query("calendarWatchChannels")
+      .withIndex("by_resourceId", (q) => q.eq("resourceId", args.resourceId))
+      .filter((q) => q.gte("expiration", new Date().toISOString()))
+      .first();
+  }
+})
+
+export const createWatchChannel = mutation({
+  args: {
+    userId: v.id("users"),
+    response: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const { response } = args;
+    
+    await ctx.db.insert("calendarWatchChannels", {
+      userId: args.userId,
+      channelId: response.channelId,
+      resourceId: response.resourceId! as string,
+      resourceUri: response.resourceUri! as string,
+      expiration: response.expiration ?? 0,
+      token: response.token!,
+      createdAt: new Date().toISOString(),
+    })
   }
 })
