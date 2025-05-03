@@ -125,14 +125,17 @@ export const create = mutation({
       messageCount: chat.messageCount + 2,
     });
 
+    console.log("chat openaithreadid", chat.openaiThreadId);
 
     if (chat.openaiThreadId) {
-      await ctx.scheduler.runAfter(0, internal.openai.createMessage, {
-        messageId,
-        openaiThreadId: chat.openaiThreadId,
-        content: args.content,
-        role: "user",
-      });
+      if (chat.openaiThreadId !== "pending") {
+        await ctx.scheduler.runAfter(0, internal.openai.createMessage, {
+          messageId,
+          openaiThreadId: chat.openaiThreadId,
+          content: args.content,
+          role: "user",
+        });
+      }
 
       if (chat.assistantId !== "default") {
         // Get the assistant details

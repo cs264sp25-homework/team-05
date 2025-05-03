@@ -4,12 +4,27 @@ import { assistantIdType } from "./schema";
 import { api, internal } from "./_generated/api";
 
 export const getAll = query({
-    handler: async (ctx) => {
+    args: {
+      userId: v.optional(v.string()),
+    },
+    handler: async (ctx, args) => {
       console.log("Loading the chats........");
       const identity = await ctx.auth.getUserIdentity();
-      const userId = identity?.subject;
+      console.log("Identity in get all:", identity);
+      console.log("User ID in get all args:", args.userId);
+      const userId = args.userId || identity?.subject;
+      console.log("User ID in get all:", userId);
+
+      if (!userId) {
+        throw new ConvexError({
+          code: 400,
+          message: "User ID is required",
+        });
+      }
+
+
       const userChats = await ctx.db.query("chats").withIndex("by_user_id", (q) => q.eq("userId", userId)).collect();
-      const groups: any[] = await ctx.runQuery(api.groups.getUserGroups);
+      const groups: any[] = await ctx.runQuery(api.groups.getUserGroups, { userId });
       const groupChats = await Promise.all(
         groups.map((group) => ctx.db.query("chats").withIndex("by_group_id", (q) => q.eq("groupId", group._id)).collect())
       )

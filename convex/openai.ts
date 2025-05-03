@@ -446,7 +446,7 @@ export const completion = internalAction({
           }
           console.log(fullResponse)
           
-         if (args.openaiThreadId) {
+         if (args.openaiThreadId !== "pending") {
           await ctx.scheduler.runAfter(0, internal.openai.createMessage, {
             messageId: args.placeholderMessageId,
             openaiThreadId: args.openaiThreadId,
@@ -773,7 +773,16 @@ export async function handleToolCalls(toolCalls: any[], userId: any, ownerId: an
   for (const toolCall of toolCalls) {
     if (toolCall.type === "function") {
       const functionName = toolCall.function.name;
-      const args = JSON.parse(toolCall.function.arguments);
+
+      // If the toolCall.function.arguments is an array, take the first element and then parse, if not just parse it
+      let args = null;
+      if (Array.isArray(toolCall.function.arguments)) {
+        console.log("The function arguments are an array");
+        args = toolCall.function.arguments[0];
+      } else {
+        console.log("The function arguments are not an array");
+        args = JSON.parse(toolCall.function.arguments);
+      }
 
       console.log("The function name", functionName);
       console.log("The function arguments", args);

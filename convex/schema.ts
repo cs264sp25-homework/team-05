@@ -117,12 +117,12 @@ const schema = defineSchema({
     colorId: v.optional(v.string()),
     start: v.object({
       date: v.optional(v.string()),
-      dateTime: v.string(),
+      dateTime: v.any(),
       timeZone: v.optional(v.string()),
     }),
     end: v.object({
       date: v.optional(v.string()),
-      dateTime: v.string(),
+      dateTime: v.any(),
       timeZone: v.optional(v.string()),
     }),
     recurrence: v.optional(v.array(v.string())),
@@ -138,6 +138,17 @@ const schema = defineSchema({
   .index("by_calendarId", ["calendarId"])
   .index("by_eventId", ["eventId", "calendarId"])
   .index("by_userId_eventId", ["userId", "eventId"]),
+  calendarWatchChannels: defineTable({
+    userId: v.id("users"),
+    channelId: v.string(),       // You generate this
+    resourceId: v.string(),      // Google returns this in webhook
+    resourceUri: v.string(),      // The calendar being watched
+    expiration: v.union(v.number(), v.string()),      // Epoch ms
+    createdAt: v.string(),
+    token: v.optional(v.string()), 
+  })
+  .index("by_userId", ["userId"])
+  .index("by_resourceId", ["resourceId"]),
 });
  
 export default schema;

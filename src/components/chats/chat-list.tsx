@@ -2,9 +2,18 @@ import { useQueryChats } from "@/hooks/use-query-chats";
 import Chat from "./chat";
 import Loading from "@/components/loading";
 import Empty from "@/components/empty";
+import { Authenticated } from "convex/react";
+import { useUser } from "@clerk/clerk-react";
 
 const ChatList: React.FC = () => {
-  const { data: chats, loading, error } = useQueryChats();
+
+  const { user } = useUser();
+
+  if (!user || !user.id) {
+    return <Loading />;
+  }
+
+  const { data: chats, loading, error } = useQueryChats(user.id);
 
   if (loading) {
     return <Loading />;
@@ -19,6 +28,7 @@ const ChatList: React.FC = () => {
   }
 
   return (
+    <Authenticated>
     <div aria-label="Chat list" className="flex flex-col gap-2">
       {chats &&
         chats.map(({ _id, title, description, messageCount, pageCount, groupId }) => (
@@ -34,6 +44,7 @@ const ChatList: React.FC = () => {
           </div>
         ))}
     </div>
+    </Authenticated>
   );
 };
 

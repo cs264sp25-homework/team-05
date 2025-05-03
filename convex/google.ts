@@ -6,6 +6,7 @@ import { createClerkClient } from '@clerk/backend'
 import { api, internal } from "./_generated/api";
 import { ConvexError } from "convex/values";
 import { Id } from "./_generated/dataModel";
+import { randomUUID } from "crypto";
 
 const client = new google.auth.OAuth2(
   process.env.GOOGLE_OAUTH_CLIENT_ID,
@@ -64,7 +65,7 @@ export const listGoogleCalendarEvents = action({
       userId: v.optional(v.any()), // Allow passing in a userId to get enable tool call
     },
     handler: async (ctx, args) => {   
-      console.log(`[DEBUG] listGoogleCalendarEvents: Starting for ${typeof args.userId === 'string' ? args.userId : args.userId?.subject || 'unknown user'}`);
+      // console.log(`[DEBUG] listGoogleCalendarEvents: Starting for ${typeof args.userId === 'string' ? args.userId : args.userId?.subject || 'unknown user'}`);
       
       // CRITICAL FIX: Ensure the date range is valid and not identical
       let startDate = args.startDate;
@@ -72,15 +73,15 @@ export const listGoogleCalendarEvents = action({
       
       // Check if dates are identical, which causes an empty result
       if (startDate === endDate) {
-        console.log(`[CRITICAL WARNING] listGoogleCalendarEvents: Start and end dates are identical. Fixing the range.`);
+        // console.log(`[CRITICAL WARNING] listGoogleCalendarEvents: Start and end dates are identical. Fixing the range.`);
         // Add 24 hours to end date
         const endDateTime = new Date(endDate);
         endDateTime.setDate(endDateTime.getDate() + 1);
         endDate = endDateTime.toISOString();
-        console.log(`[DEBUG] listGoogleCalendarEvents: Adjusted date range to ${startDate} to ${endDate}`);
+        // console.log(`[DEBUG] listGoogleCalendarEvents: Adjusted date range to ${startDate} to ${endDate}`);
       }
       
-      console.log(`[DEBUG] listGoogleCalendarEvents: Date range ${startDate} to ${endDate}`);
+      // console.log(`[DEBUG] listGoogleCalendarEvents: Date range ${startDate} to ${endDate}`);
       
       // Validate date ranges
       if (!isValidIsoDate(startDate) || !isValidIsoDate(endDate)) {
@@ -106,7 +107,7 @@ export const listGoogleCalendarEvents = action({
         access_token: token,
       });
       
-      console.log(`[DEBUG] listGoogleCalendarEvents: Successfully set OAuth token, fetching events`);
+      // console.log(`[DEBUG] listGoogleCalendarEvents: Successfully set OAuth token, fetching events`);
   
       try {
         // IMPROVED: More comprehensive Google Calendar API call
@@ -116,7 +117,7 @@ export const listGoogleCalendarEvents = action({
           singleEvents: true, // Expand recurring events into instances
           timeMin: startDate, // Start date in ISO format
           timeMax: endDate,   // End date in ISO format
-          maxResults: 2500,        // Get a large number of events
+          maxResults: 25,        // Get a small number of events
           orderBy: "startTime",
           showDeleted: false,
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Use client timezone
@@ -124,7 +125,7 @@ export const listGoogleCalendarEvents = action({
         });
         
         // Log raw events for debugging
-        console.log(`[DEBUG] Raw Google Calendar response: ${events.data.items?.length || 0} events found`);
+        // console.log(`[DEBUG] Raw Google Calendar response: ${events.data.items?.length || 0} events found`);
         
         if (!events.data.items || events.data.items.length === 0) {
           console.warn(`[WARN] No events found in Google Calendar response for time range ${startDate} to ${endDate}`);
@@ -134,11 +135,11 @@ export const listGoogleCalendarEvents = action({
               auth: client
             });
             
-            console.log(`[DEBUG] User has ${calendarList.data.items?.length || 0} calendars`);
+            // console.log(`[DEBUG] User has ${calendarList.data.items?.length || 0} calendars`);
             
             if (calendarList.data.items && calendarList.data.items.length > 0) {
               // Try getting events from each calendar
-              console.log(`[DEBUG] Attempting to fetch events from all calendars`);
+              // console.log(`[DEBUG] Attempting to fetch events from all calendars`);
               
               const allEvents: any[] = [];
               for (const calendar of calendarList.data.items) {
@@ -148,21 +149,21 @@ export const listGoogleCalendarEvents = action({
                     continue;
                   }
                   
-                  console.log(`[DEBUG] Checking calendar: ${calendar.summary || 'Unknown'}`);
+                  //console.log(`[DEBUG] Checking calendar: ${calendar.summary || 'Unknown'}`);
                   const calEvents = await google.calendar("v3").events.list({
                     calendarId: calendar.id || 'primary',
                     eventTypes: ["default", "focusTime", "outOfOffice", "workingLocation"],
                     singleEvents: true,
                     timeMin: startDate,
                     timeMax: endDate,
-                    maxResults: 2500,
+                    maxResults: 25,
                     orderBy: "startTime",
                     showDeleted: false,
                     auth: client,
                   });
                   
                   if (calEvents.data?.items && calEvents.data.items.length > 0) {
-                    console.log(`[DEBUG] Found ${calEvents.data.items.length} events in calendar "${calendar.summary || 'Unknown'}"`);
+                    // console.log(`[DEBUG] Found ${calEvents.data.items.length} events in calendar "${calendar.summary || 'Unknown'}"`);
                     allEvents.push(...calEvents.data.items);
                   }
                 } catch (err) {
@@ -171,7 +172,7 @@ export const listGoogleCalendarEvents = action({
               }
               
               if (allEvents.length > 0) {
-                console.log(`[DEBUG] Found ${allEvents.length} events across all calendars`);
+                // console.log(`[DEBUG] Found ${allEvents.length} events across all calendars`);
                 events.data.items = allEvents;
               }
             }
@@ -181,20 +182,20 @@ export const listGoogleCalendarEvents = action({
         }
         
         // Log all events for debugging with more details
-        if (events.data.items && events.data.items.length > 0) {
-          console.log(`[DEBUG] Retrieved ${events.data.items.length} events from calendar(s):`);
-          events.data.items.forEach((evt, idx) => {
-            const startTime = evt.start?.dateTime || evt.start?.date || 'unknown';
-            const endTime = evt.end?.dateTime || evt.end?.date || 'unknown';
-            console.log(`[DEBUG] Event ${idx+1}: "${evt.summary || 'No title'}" from ${startTime} to ${endTime} (status: ${evt.status || 'unknown'})`);
-          });
-        }
+        // if (events.data.items && events.data.items.length > 0) {
+        //   //console.log(`[DEBUG] Retrieved ${events.data.items.length} events from calendar(s):`);
+        //   events.data.items.forEach((evt, idx) => {
+        //     const startTime = evt.start?.dateTime || evt.start?.date || 'unknown';
+        //     const endTime = evt.end?.dateTime || evt.end?.date || 'unknown';
+        //     // console.log(`[DEBUG] Event ${idx+1}: "${evt.summary || 'No title'}" from ${startTime} to ${endTime} (status: ${evt.status || 'unknown'})`);
+        //   });
+        // }
         
         // IMPROVED: More robust event normalization - ensure everything is converted properly
         const normalizedEvents = (events.data.items || []).map(event => {
           // Skip cancelled events
           if (event.status === 'cancelled') {
-            console.log(`[DEBUG] Skipping cancelled event: "${event.summary || 'Unnamed'}"`);
+            // console.log(`[DEBUG] Skipping cancelled event: "${event.summary || 'Unnamed'}"`);
             return null;
           }
           
@@ -232,7 +233,7 @@ export const listGoogleCalendarEvents = action({
                 endDateTime = endDate.toISOString();
               }
               
-              console.log(`[DEBUG] Normalized all-day event "${event.summary || 'Unnamed'}": ${startDateTime} to ${endDateTime}`);
+              // console.log(`[DEBUG] Normalized all-day event "${event.summary || 'Unnamed'}": ${startDateTime} to ${endDateTime}`);
             } 
             // 2. Handle regular events with specific times
             else if (event.start.dateTime && event.end.dateTime) {
@@ -275,20 +276,34 @@ export const listGoogleCalendarEvents = action({
             // Create normalized event with consistent datetime format
             const normalizedEvent = {
               id: event.id,
+              created: event.created,
+              updated: event.updated ?? "",
+              htmlLink: event.htmlLink ?? "",
+              description: event.description ?? "",
+              location: event.location ?? "",
+              colorId: event.colorId ?? "",
               summary: event.summary || 'Unnamed event',
               start: {
+                date: event.start.date ?? "",
                 dateTime: startDateTime,
+                timeZone: event.start.timeZone ?? "",
                 isAllDay
               },
               end: {
+                date: event.end.date ?? "",
                 dateTime: endDateTime,
+                timeZone: event.end.timeZone ?? "",
                 isAllDay
+              },
+              recurrence: event.recurrence ?? [],
+              reminders: {
+                useDefault: event.reminders?.useDefault ?? false,
               },
               status: event.status || 'confirmed',
               _normalized: true
             };
             
-            console.log(`[DEBUG] Normalized event: "${event.summary || 'Unnamed'}" from ${new Date(startDateTime).toLocaleString()} to ${new Date(endDateTime).toLocaleString()}`);
+            // console.log(`[DEBUG] Normalized event: "${event.summary || 'Unnamed'}" from ${new Date(startDateTime).toLocaleString()} to ${new Date(endDateTime).toLocaleString()}`);
             return normalizedEvent;
           } catch (err) {
             console.error(`[ERROR] Failed to normalize event "${event.summary || 'Unnamed'}":`, err);
@@ -296,7 +311,10 @@ export const listGoogleCalendarEvents = action({
           }
         }).filter(Boolean); // Remove nulls
         
-        console.log(`[DEBUG] Retrieved and normalized ${normalizedEvents.length} events total`);
+        // console.log(`[DEBUG] Retrieved and normalized ${normalizedEvents.length} events total`);
+        // await ctx.runMutation(api.calendarEvents.bulkInsertCalendarEvent, {
+        //   userId: 
+        // })
         
         return normalizedEvents;
       } catch (error) {
@@ -313,7 +331,7 @@ function isValidIsoDate(dateStr: string | null | undefined): boolean {
   try {
     const date = new Date(dateStr);
     return !isNaN(date.getTime()) && date.toISOString().startsWith(dateStr.split('T')[0]);
-  } catch (e) {
+  } catch {
     return false;
   }
 }
@@ -353,6 +371,8 @@ export const createGoogleCalendarEvent = action({
     } else {
       param_user_id = args.userId.subject;
     }
+
+    console.log("This is the userId passed in: ", param_user_id);
     
 
     // const token = await ctx.runAction(internal.google.getAccessToken);
@@ -381,8 +401,8 @@ export const createGoogleCalendarEvent = action({
       })
     }
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
+    const user = await ctx.runQuery(api.users.getUserWithIdentity, {identity: param_user_id});
+    // console.log("This is the user returned from withIdentity", user);
     if (!user) {
       throw new ConvexError({
         code: 401,
@@ -390,6 +410,49 @@ export const createGoogleCalendarEvent = action({
       });
     }
 
+    const existingChannel = await ctx.runQuery(api.calendarEvents.getWatchChannel, {
+      userId: user._id,
+    })
+
+
+    if (!existingChannel) {
+      const channelId = randomUUID();
+      const response = await google.calendar("v3").events.watch({
+        calendarId: "primary",
+        requestBody: {
+          id: channelId,
+          token: user.tokenIdentifier,
+          type: "web_hook",
+          address: "https://original-peccary-306.convex.site/google-notifications"
+        },
+        auth: client,
+      })
+      // console.log("This is the response from the watch channel", response.data);
+
+      if (response.status != 200)  {
+        throw new ConvexError({
+          code: 502,
+          message: "Google API error"
+        })
+      }
+      await ctx.runMutation(api.calendarEvents.createWatchChannel, {
+        userId: user._id,
+        response: {
+          channelId: response.data.id!,
+          resourceId: response.data.resourceId!,
+          resourceUri: response.data.resourceUri!,
+          token: user.tokenIdentifier,
+          expiration: response.data.expiration ?? 0,
+        }
+      })
+    }
+    
+
+    // console.log("Here is the response from Google Event aoeaowe", response.data);
+    // console.log("Start", response.data.start);
+    // console.log("End", response.data.end);
+    // console.log("args user id", args.userId);
+    
 
     await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
       userId: user._id,
@@ -404,12 +467,12 @@ export const createGoogleCalendarEvent = action({
       colorId: response.data.colorId ?? "",
       start: {
         date: response.data.start?.date ?? "",
-        dateTime: response.data.start! as string,
+        dateTime: response.data.start?.dateTime as string,
         timeZone: response.data.start?.timeZone ?? "",
       },
       end: {
         date: response.data.end?.date ?? "",
-        dateTime: response.data.end! as string,
+        dateTime: response.data.end?.dateTime as string,
         timeZone: response.data.end?.timeZone ?? "",
       },
       recurrence: response.data.recurrence ?? [],
@@ -468,17 +531,17 @@ export const updateGoogleCalendarEvent = action({
       auth: client,
     });
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
-    if (!user) {
-      throw new ConvexError({
-        code: 401,
-        message: "User not authenticated",
-      });
-    }
+    // const user = await ctx.runQuery(api.users.getUser, {
+    // })
+    // if (!user) {
+    //   throw new ConvexError({
+    //     code: 401,
+    //     message: "User not authenticated",
+    //   });
+    // }
 
     await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
-      userId: user._id,
+      userId: args.userId,
       calendarId: "primary",
       eventId: response.data.id!,
       created: response.data.created!,
@@ -535,14 +598,14 @@ export const deleteGoogleCalendarEvent = action({
       auth: client,
     });
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
-    if (!user) {
-      throw new ConvexError({
-        code: 401,
-        message: "User not authenticated",
-      });
-    }
+    // const user = await ctx.runQuery(api.users.getUser, {
+    // })
+    // if (!user) {
+    //   throw new ConvexError({
+    //     code: 401,
+    //     message: "User not authenticated",
+    //   });
+    // }
 
     await ctx.runMutation(api.calendarEvents.deleteEvent, {
       id: args.id,
@@ -678,7 +741,7 @@ export const findGroupAvailability = action({
           });
           
           const memberName = member.name || member.userId;
-          console.log(`[DEBUG] Retrieved ${events?.length || 0} events for member: ${memberName}`);
+          //console.log(`[DEBUG] Retrieved ${events?.length || 0} events for member: ${memberName}`);
           
           // Log each event for this member for debugging
           if (events && events.length > 0) {
