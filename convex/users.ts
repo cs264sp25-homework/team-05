@@ -65,7 +65,7 @@ export const getUserWithIdentity = query({
     return ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
-        q.eq("tokenIdentifier", args.identity.subject),
+        q.eq("tokenIdentifier", args.identity),
       )
       .unique();
   },
