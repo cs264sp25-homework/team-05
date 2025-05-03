@@ -12,6 +12,7 @@ const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
 // Debug: Log the environment variable
 console.log("Clerk Key:", import.meta.env.VITE_CLERK_PUBLISHABLE_KEY);
+// console.log(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
 
 const router = createRouter({
   routeTree,
@@ -28,7 +29,7 @@ declare module "@tanstack/react-router" {
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey="pk_test_c3VpdGFibGUtY29icmEtODQuY2xlcmsuYWNjb3VudHMuZGV2JA">
     <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
       <TooltipProvider>
           <RouterProvider router={router} />

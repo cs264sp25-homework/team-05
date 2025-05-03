@@ -77,7 +77,7 @@ export const editAssistantRoute = new Route({
     const {assistantId} = useParams({strict: false})
     return <Layout
       leftPanelContent={<ListAssistantsPage />}
-      middlePanelContent={<EditAssistantPage assistantId={params.assistantId as string} />}
+      middlePanelContent={<EditAssistantPage assistantId={assistantId as string} />}
       rightPanelContent={null}
     />
 },

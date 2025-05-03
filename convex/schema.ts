@@ -117,12 +117,12 @@ const schema = defineSchema({
     colorId: v.optional(v.string()),
     start: v.object({
       date: v.optional(v.string()),
-      dateTime: v.string(),
+      dateTime: v.any(),
       timeZone: v.optional(v.string()),
     }),
     end: v.object({
       date: v.optional(v.string()),
-      dateTime: v.string(),
+      dateTime: v.any(),
       timeZone: v.optional(v.string()),
     }),
     recurrence: v.optional(v.array(v.string())),

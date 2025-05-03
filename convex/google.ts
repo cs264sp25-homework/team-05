@@ -381,8 +381,8 @@ export const createGoogleCalendarEvent = action({
       })
     }
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
+    const user = await ctx.runQuery(api.users.getUserWithIdentity, {identity: args.userId,});
+    console.log("This is the user returned from withIdentity", user);
     if (!user) {
       throw new ConvexError({
         code: 401,
@@ -390,6 +390,11 @@ export const createGoogleCalendarEvent = action({
       });
     }
 
+    console.log("Here is the response from Google Event aoeaowe", response.data);
+    console.log("Start", response.data.start);
+    console.log("End", response.data.end);
+    console.log("args user id", args.userId);
+    
 
     await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
       userId: user._id,
@@ -404,12 +409,12 @@ export const createGoogleCalendarEvent = action({
       colorId: response.data.colorId ?? "",
       start: {
         date: response.data.start?.date ?? "",
-        dateTime: response.data.start! as string,
+        dateTime: response.data.start?.dateTime! as string,
         timeZone: response.data.start?.timeZone ?? "",
       },
       end: {
         date: response.data.end?.date ?? "",
-        dateTime: response.data.end! as string,
+        dateTime: response.data.end?.dateTime! as string,
         timeZone: response.data.end?.timeZone ?? "",
       },
       recurrence: response.data.recurrence ?? [],
@@ -468,17 +473,17 @@ export const updateGoogleCalendarEvent = action({
       auth: client,
     });
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
-    if (!user) {
-      throw new ConvexError({
-        code: 401,
-        message: "User not authenticated",
-      });
-    }
+    // const user = await ctx.runQuery(api.users.getUser, {
+    // })
+    // if (!user) {
+    //   throw new ConvexError({
+    //     code: 401,
+    //     message: "User not authenticated",
+    //   });
+    // }
 
     await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
-      userId: user._id,
+      userId: args.userId,
       calendarId: "primary",
       eventId: response.data.id!,
       created: response.data.created!,
@@ -535,14 +540,14 @@ export const deleteGoogleCalendarEvent = action({
       auth: client,
     });
 
-    const user = await ctx.runQuery(api.users.getUser, {
-    })
-    if (!user) {
-      throw new ConvexError({
-        code: 401,
-        message: "User not authenticated",
-      });
-    }
+    // const user = await ctx.runQuery(api.users.getUser, {
+    // })
+    // if (!user) {
+    //   throw new ConvexError({
+    //     code: 401,
+    //     message: "User not authenticated",
+    //   });
+    // }
 
     await ctx.runMutation(api.calendarEvents.deleteEvent, {
       id: args.id,

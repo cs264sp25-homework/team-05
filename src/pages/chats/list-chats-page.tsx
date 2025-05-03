@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRouter } from "@/hooks/use-router";
 import { cn } from "@/lib/utils";
+import { Authenticated } from "convex/react";
 import { HandHelping, PlusCircle } from "lucide-react";
 
 const DEBUG = false;
@@ -11,6 +12,7 @@ const ListChatsPage: React.FC = () => {
   const { navigate } = useRouter();
 
   return (
+    <Authenticated>
     <ScrollArea
       className={cn("p-1 md:p-2 lg:p-4 h-full", {
         "border-2 border-red-500": DEBUG,
@@ -40,6 +42,7 @@ const ListChatsPage: React.FC = () => {
       </div>
       <ChatList />
     </ScrollArea>
+    </Authenticated>
   );
 };
 

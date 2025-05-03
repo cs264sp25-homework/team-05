@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Users, Plus, Link as LinkIcon, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton, useUser } from "@clerk/clerk-react";
 import GroupDetailsDialog from "@/components/group-details-dialog";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -38,7 +38,12 @@ const GroupsContent = () => {
     role: string;
   } | null>(null);
 
-  const groups = useQuery(api.groups.getUserGroups);
+  const { user } = useUser();
+  if (!user) {
+    console.log("ajeoaiwefoawefawoei")
+  }
+
+  const groups = useQuery(api.groups.getUserGroups, user?.id ? {userId: user.id} : "skip");
   const createGroup = useMutation(api.groups.createGroup);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
