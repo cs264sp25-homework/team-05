@@ -14,6 +14,7 @@ export const createAssistantSchema = z.object({
   metadata: z.optional(z.record(z.string())),
   tools: z.optional(z.array(toolSchema)),
   numWeeks: z.union([z.literal(1), z.literal(2)]),
+  owner: z.optional(z.string()),
 });
 
 export const updateAssistantSchema = createAssistantSchema.partial();
