@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 import { Calendar, Users, MessageSquare, Bot } from "lucide-react";
 import { useRouter } from "@/hooks/use-router";
 import { Button } from "./ui/button";
-import { useUser } from "@clerk/clerk-react";
 import { Page } from "@/store/router";
 
 const DEBUG = false;
@@ -15,14 +14,6 @@ interface NavItem {
 
 const Header: React.FC = () => {
   const { navigate, currentRoute } = useRouter();
-  const { user } = useUser();
-
-  console.log(user?.firstName);
-
-  let firstName = "";
-  if (user?.firstName) {
-    firstName = user.firstName;
-  }
 
   const navItems: NavItem[] = [
     {
@@ -39,6 +30,11 @@ const Header: React.FC = () => {
       icon: <MessageSquare className="w-5 h-5" />,
       label: "Chats",
       route: "chats",
+    },
+    {
+      icon: <Bot className="w-5 h-5" />,
+      label: "Assistants",
+      route: "assistants",
     },
   ];
 
@@ -58,8 +54,7 @@ const Header: React.FC = () => {
       >
         <Calendar className="w-6 h-6" />
         <span className="font-semibold text-lg">Scheduler App</span>
-        <Bot className="w-5 h-5 mr-1" onClick={() => navigate("assistants")}/>
-        <span>{firstName}'s Assistants</span>
+
 
       </div>
 

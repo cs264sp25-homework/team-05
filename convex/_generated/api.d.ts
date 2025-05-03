@@ -23,6 +23,7 @@ import type * as groups from "../groups.js";
 import type * as http from "../http.js";
 import type * as messages from "../messages.js";
 import type * as openai from "../openai.js";
+import type * as user_details from "../user_details.js";
 import type * as users from "../users.js";
 
 /**
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   messages: typeof messages;
   openai: typeof openai;
+  user_details: typeof user_details;
   users: typeof users;
 }>;
 export declare const api: FilterApi<

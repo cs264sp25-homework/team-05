@@ -57,6 +57,7 @@ export const createGroup = mutation({
       messageCount: 0,
       pageCount: 0, // Typically starts at 0 files/pages
       groupId: groupId, // <-- STORE THE GROUP ID HERE
+      assistantId: "default",
     });
     
     // 3. Update the group document with the chatId
@@ -158,13 +159,16 @@ export const joinGroup = mutation({
 
 // Get all groups for a user
 export const getUserGroups = query({
-  handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // const identity = await ctx.auth.getUserIdentity();
+    // if (!identity) {
+    //   throw new Error("Not authenticated");
+    // }
 
-    const userId = identity.subject;
+    const userId = args.userId;
 
     // Get all group memberships for the user
     const memberships = await ctx.db
@@ -407,7 +411,7 @@ export const enrichGroupMemberProfiles = action({
     
     // Fetch all user profiles using the action
     const userProfiles = await ctx.runAction(
-      internal.users.getUserProfiles, 
+      internal.user_details.getUserProfiles, 
       { userIds }
     );
     
