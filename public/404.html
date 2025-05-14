@@ -8,30 +8,25 @@
     // MIT License
     // https://github.com/rafgraph/spa-github-pages
     (function() {
-      // This works for all paths except the root path
-      var segmentCount = 1; // Adjust this value based on your repo name (team-05 is 1 segment)
       var l = window.location;
-      var repo = '/team-05'; // Your repo name
+      var pathSegments = l.pathname.split('/');
       
-      // Extract the path after the repo name
-      var fullPath = l.pathname;
-      var pathSegments = fullPath.split('/').filter(Boolean);
+      // Find the position of 'team-05' in the path
+      var repoNameIndex = pathSegments.indexOf('team-05');
       
-      // Remove the repo name from the path
-      if (pathSegments[0] === 'team-05') {
-        pathSegments.shift();
+      // If 'team-05' is in the path and it's not the last segment
+      if (repoNameIndex !== -1 && repoNameIndex < pathSegments.length - 1) {
+        // Extract the path after 'team-05'
+        var pathAfterRepo = pathSegments.slice(repoNameIndex + 1).join('/');
+        
+        // Redirect to the root of the app with the path in a query parameter
+        l.replace(
+          l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+          '/team-05/?p=/' + encodeURIComponent(pathAfterRepo) +
+          (l.search ? '&q=' + encodeURIComponent(l.search.slice(1)) : '') +
+          (l.hash || '')
+        );
       }
-      
-      // Reconstruct the path without the repo name
-      var path = '/' + pathSegments.join('/');
-      
-      // Redirect to the index.html with the path in the query string
-      l.replace(
-        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
-        repo + '/?p=' + encodeURIComponent(path) +
-        (l.search ? '&q=' + encodeURIComponent(l.search.slice(1)) : '') +
-        (l.hash || '')
-      );
     })();
   </script>
 </head>

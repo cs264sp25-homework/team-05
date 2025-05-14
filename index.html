@@ -20,7 +20,13 @@
           });
           if (q.p !== undefined) {
             // If we have a path parameter, reconstruct the URL
-            var path = q.p;
+            var path = decodeURIComponent(q.p);
+            
+            // Make sure path starts with a slash but doesn't duplicate slashes
+            if (!path.startsWith('/')) {
+              path = '/' + path;
+            }
+            
             var newUrl = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') + 
                         '/team-05' + path + 
                         (q.q ? ('?' + q.q) : '') + 
