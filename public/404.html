@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Redirecting...</title>
+  <script>
+    // Single Page Apps for GitHub Pages
+    // MIT License
+    // https://github.com/rafgraph/spa-github-pages
+    (function() {
+      // This works for all paths except the root path
+      var segmentCount = 1; // Adjust this value based on your repo name (team-05 is 1 segment)
+      var l = window.location;
+      var repo = '/team-05'; // Your repo name
+      
+      // Extract the path after the repo name
+      var fullPath = l.pathname;
+      var pathSegments = fullPath.split('/').filter(Boolean);
+      
+      // Remove the repo name from the path
+      if (pathSegments[0] === 'team-05') {
+        pathSegments.shift();
+      }
+      
+      // Reconstruct the path without the repo name
+      var path = '/' + pathSegments.join('/');
+      
+      // Redirect to the index.html with the path in the query string
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        repo + '/?p=' + encodeURIComponent(path) +
+        (l.search ? '&q=' + encodeURIComponent(l.search.slice(1)) : '') +
+        (l.hash || '')
+      );
+    })();
+  </script>
+</head>
+<body>
+  Redirecting...
+</body>
+</html> 
