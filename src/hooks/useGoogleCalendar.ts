@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useAction, useConvexAuth } from 'convex/react';
+import { useAction, useConvexAuth, useQuery } from 'convex/react';
 import { api } from "../../convex/_generated/api";
 import { useAuth } from '@clerk/clerk-react';
+
 
 interface CalendarEvent {
   id: string;
@@ -22,31 +23,35 @@ export function useGoogleCalendar() {
   const [error, setError] = useState<Error | null>(null);
 
   const { userId } = useAuth();
+  
 
   //TODO change this to fetch events from the database
-  const fetchEvents = useAction(api.google.listGoogleCalendarEvents);
   const createEvent = useAction(api.google.createGoogleCalendarEvent);
   const updateEventAction = useAction(api.google.updateGoogleCalendarEvent);
   const deleteEventAction = useAction(api.google.deleteGoogleCalendarEvent);
 
+  const getEventsFromDB = useQuery(api.calendarEvents.getEvents);
+  
+
+  
   useEffect(() => {
     if (isAuthenticated) {
       loadEvents(new Date().toISOString(), new Date().toISOString());
+
     }
-  }, [isAuthenticated]);
+  }, [getEventsFromDB, isAuthenticated]);
 
   const loadEvents = async (startDate: string, endDate: string) => {
+    console.log(startDate, endDate);
     if (!isAuthenticated) return;
     
     setIsLoading(true);
     setError(null);
     try {
-      const functionEvents = await fetchEvents({
-        startDate,
-        endDate
-      });
+
+      const listEvents = getEventsFromDB || [];
       
-      const events = functionEvents.map((event: any) => ({
+      const events = listEvents.map((event: any) => ({
         id: event.id,
         title: event.summary,
         start: event.start.dateTime || event.start.date || '',
@@ -119,6 +124,9 @@ export function useGoogleCalendar() {
           }
         }
       });
+
+    
+
 
       if (updatedGoogleEvent?.id) {
         setEvents(prev => prev.map(event => 

@@ -188,6 +188,7 @@ export const getEvents = query({
     if (!identity) {
       throw new Error("Called getUser without authentication present");
     }
+
     const user = await ctx.db
       .query("users")
       .withIndex("by_token", (q) =>
@@ -201,10 +202,13 @@ export const getEvents = query({
         message: "User not authenticated",
       });
     }
-    return await ctx.db
+
+    const results = await ctx.db
       .query("calendarEvents")
       .withIndex("by_userId", (q) =>  q.eq("userId", user._id))
       .collect();
+
+    return results;
     
   }
 })

@@ -90,12 +90,26 @@ export const listGoogleCalendarEvents = action({
       }
       
       let token = null; 
+      let userTokenIdentifier = null;
       if (args.userId) {
         token = await ctx.runAction(internal.google.getAccessTokenWithUserId, {
           userId: args.userId, // Pass in the userId to get the token for that user
         });
       } else {
-        token = await ctx.runAction(internal.google.getAccessToken);
+        const identity = await ctx.auth.getUserIdentity(); //GetUserIdentity
+        if (!identity) {
+          throw new ConvexError({
+            code: 401,
+            message: "User not authenticated",
+          });
+        }
+        userTokenIdentifier = identity.subject;
+        const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+        token = await clerkClient.users.getUserOauthAccessToken(identity.subject, "google");
+        if (token.data.length === 0 || token.data[0].token == null) {
+          return;
+        }
+        token = token.data[0].token;
       }
       
       if (!token) {
@@ -310,6 +324,43 @@ export const listGoogleCalendarEvents = action({
             return null;
           }
         }).filter(Boolean); // Remove nulls
+        const user = await ctx.runQuery(api.users.getUserWithIdentity, {identity: userTokenIdentifier});
+        // console.log("This is the user returned from withIdentity", user);
+        if (!user) {
+          throw new ConvexError({
+            code: 401,
+            message: "User not authenticated",
+          });
+        }
+        await ctx.runMutation(api.calendarEvents.bulkInsertCalendarEvent, {
+          userId: user._id,
+          events: normalizedEvents.map((event: any) => ({
+            eventId: event.id,
+            created: event.created,
+            updated: event.updated ?? "",
+            summary: event.summary,
+            htmlLink: event.htmlLink ?? "",
+            description: event.description ?? "",
+            location: event.location ?? "",
+            colorId: event.colorId ?? "",
+            start: {
+              date: event.start.date ?? "",
+              dateTime: event.start.dateTime,
+              timeZone: event.start.timeZone ?? "",
+            },
+            end: {
+              date: event.end.date ?? "",
+              dateTime: event.end.dateTime,
+              timeZone: event.end.timeZone ?? "",
+            },
+            recurrence: event.recurrence ?? [],
+            reminders: {
+              useDefault: event.reminders?.useDefault ?? false,
+            },
+            status: event.status || 'confirmed',
+          })),
+          calendarId: "primary",
+        });
         
         // console.log(`[DEBUG] Retrieved and normalized ${normalizedEvents.length} events total`);
         // await ctx.runMutation(api.calendarEvents.bulkInsertCalendarEvent, {
@@ -531,17 +582,17 @@ export const updateGoogleCalendarEvent = action({
       auth: client,
     });
 
-    // const user = await ctx.runQuery(api.users.getUser, {
-    // })
-    // if (!user) {
-    //   throw new ConvexError({
-    //     code: 401,
-    //     message: "User not authenticated",
-    //   });
-    // }
+    const user = await ctx.runQuery(api.users.getUserWithIdentity, {identity: args.userId,});
+    console.log("This is the user returned from withIdentity", user);
+    if (!user) {
+      throw new ConvexError({
+        code: 401,
+        message: "User not authenticated",
+      });
+    }
 
     await ctx.runMutation(api.calendarEvents.storeCalendarEvent, {
-      userId: args.userId,
+      userId: user._id,
       calendarId: "primary",
       eventId: response.data.id!,
       created: response.data.created!,
@@ -553,12 +604,12 @@ export const updateGoogleCalendarEvent = action({
       colorId: response.data.colorId ?? "",
       start: {
         date: response.data.start?.date ?? "",
-        dateTime: response.data.start! as string,
+        dateTime: response.data.start?.dateTime! as string,
         timeZone: response.data.start?.timeZone ?? "",
       },
       end: {
         date: response.data.end?.date ?? "",
-        dateTime: response.data.end! as string,
+        dateTime: response.data.end?.dateTime! as string,
         timeZone: response.data.end?.timeZone ?? "",
       },
       recurrence: response.data.recurrence ?? [],
